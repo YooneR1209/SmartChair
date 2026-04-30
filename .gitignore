@@ -13,6 +13,7 @@ media/
 
 # Entorno
 .env
+.env.*
 
 # Node (para cuando llegue el frontend)
 node_modules/

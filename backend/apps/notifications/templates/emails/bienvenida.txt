@@ -1,0 +1,4 @@
+Hola {{ display_name }},
+Tu cuenta fue creada correctamente. Ya puedes acceder a EasyChair.
+Saludos,
+Equipo EasyChair

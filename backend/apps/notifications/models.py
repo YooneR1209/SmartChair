@@ -1,26 +1,44 @@
-#from django.db import models
+from django.db import models
 
 # Create your models here.
 
-from django.db import models
-
 class EmailLog(models.Model):
-    class Tipo(models.TextChoices):
-        BIENVENIDA = "BIENVENIDA", "Bienvenida"
+    class TipoEmail(models.TextChoices):
+        BIENVENIDA = "bienvenida", "Bienvenida"
+        ASIGNACION_REVISOR = "asignacion_revisor", "Asignacion de revisor"
+        VEREDICTO = "veredicto", "Veredicto emitido"
+        FEEDBACK = "feedback", "Feedback anonimo"
+        CAMBIO_FECHA = "cambio_fecha", "Cambio de fecha"
+        PAPER_REENVIADO = "paper_reenviado", "Paper reenviado a revision"
 
     class Estado(models.TextChoices):
-        ENVIADO = "ENVIADO", "Enviado"
-        ERROR = "ERROR", "Error"
+        ENVIADO = "enviado", "Enviado"
+        ERROR = "error", "Error"
 
     destinatario = models.EmailField(db_index=True)
-    tipo = models.CharField(max_length=50, choices=Tipo.choices, db_index=True)
+    tipo = models.CharField(max_length=30, choices=TipoEmail.choices, db_index=True)
     asunto = models.CharField(max_length=255)
-    estado = models.CharField(max_length=20, choices=Estado.choices, db_index=True)
+    estado = models.CharField(
+        max_length=10,
+        choices=Estado.choices,
+        default=Estado.ENVIADO,
+        db_index=True,
+    )
     error_msg = models.TextField(blank=True)
     enviado_en = models.DateTimeField(blank=True, null=True, db_index=True)
     creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
-    objeto_tipo = models.CharField(max_length=100, blank=True, null=True)
-    objeto_id = models.PositiveBigIntegerField(blank=True, null=True)
+    objeto_tipo = models.CharField(max_length=50, blank=True)
+    objeto_id = models.PositiveBigIntegerField(null=True, blank=True)
+
+    # destinatario = models.EmailField(db_index=True)
+    # tipo = models.CharField(max_length=50, choices=Tipo.choices, db_index=True)
+    # asunto = models.CharField(max_length=255)
+    # estado = models.CharField(max_length=20, choices=Estado.choices, db_index=True)
+    # error_msg = models.TextField(blank=True)
+    # enviado_en = models.DateTimeField(blank=True, null=True, db_index=True)
+    # creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
+    # objeto_tipo = models.CharField(max_length=100, blank=True, null=True)
+    # objeto_id = models.PositiveBigIntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["-creado_en"]
@@ -28,8 +46,8 @@ class EmailLog(models.Model):
             models.Index(fields=["objeto_tipo", "objeto_id"]),
             models.Index(fields=["tipo", "estado"]),
         ]
-        verbose_name = "log de email"
-        verbose_name_plural = "logs de emails"
+        verbose_name = "Log de email"
+        verbose_name_plural = "Logs de emails"
 
     def __str__(self):
         return f"{self.tipo} -> {self.destinatario} ({self.estado})"

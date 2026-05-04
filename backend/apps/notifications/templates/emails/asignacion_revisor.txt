@@ -1,0 +1,7 @@
+Hola {{ revisor_nombre }},
+Se te ha asignado una nueva ponencia para revision en {{ conferencia.nombre }}.
+Ponencia:
+{{ ponencia.titulo }}
+{% if frontend_url %}Revisar asignacion: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

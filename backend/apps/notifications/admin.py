@@ -28,7 +28,7 @@ class EmailLogAdmin(admin.ModelAdmin):
         "objeto_tipo",
         "objeto_id",
     )
-    date_hierarchy = "creado_en"
+    # date_hierarchy = "creado_en"
     ordering = ("-creado_en",)
 
     def has_add_permission(self, request):

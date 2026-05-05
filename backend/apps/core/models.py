@@ -13,5 +13,8 @@ class Evento(models.Model):
     class Meta:
         abstract = True  # No crea tabla, solo sirve de base
 
-    def _str_(self):
+    # def _str_(self):
+    #     return self.nombre
+
+    def __str__(self):
         return self.nombre

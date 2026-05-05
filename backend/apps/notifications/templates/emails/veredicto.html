@@ -1,10 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "emails/base.html" %}
 
-</body>
-</html>
+{% block title %}Veredicto de ponencia{% endblock %}
+
+{% block content %}
+  <p>Hola <strong>{{ autor_nombre }}</strong>,</p>
+  <p>Tu ponencia <strong>{{ titulo_ponencia }}</strong> ha recibido un veredicto:</p>
+  <p style="font-size: 18px; font-weight: bold; color: #1f4e79;">
+    {{ veredicto|upper }}
+  </p>
+
+  {% if feedback %}
+    <p><strong>Comentarios anonimos de los revisores:</strong></p>
+    {% for comentario in feedback %}
+      <blockquote style="border-left: 3px solid #ccc; padding-left: 12px; color: #555;">
+        {{ comentario }}
+      </blockquote>
+    {% endfor %}
+  {% endif %}
+
+  {% if frontend_url %}
+    <a class="btn" href="{{ frontend_url }}">Ver en SmartChair</a>
+  {% endif %}
+{% endblock %}

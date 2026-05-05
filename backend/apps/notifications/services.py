@@ -10,25 +10,6 @@ from .models import EmailLog
 
 logger = logging.getLogger(__name__)
 
-#------------------------------------------------
-# def _nombre_visible(user):
-#     """Obtiene el nombre buscando en todos los campos posibles."""
-#     if not user:
-#         return "Usuario"
-#
-#     """Obtiene el nombre más descriptivo posible del usuario."""
-#     nombre_completo = getattr(user, "nombre_completo", None)
-#     if nombre_completo:
-#         return nombre_completo() if callable(nombre_completo) else nombre_completo
-#
-#     nombres = getattr(user, "nombres", "") or getattr(user, "nombre", "") or getattr(user, "first_name", "")
-#     apellidos = getattr(user, "apellidos", "") or getattr(user, "apellido", "") or getattr(user, "last_name", "")
-#
-#     nombre = f"{nombres} {apellidos}".strip()
-#
-#     #return nombre or getattr(user, "email", "") or str(user)
-#     return nombre or getattr(user, "email", "") or getattr(user, "username", str(user))
-
 def _nombre_visible(user):
     """Obtiene el nombre usando los campos reales de tu modelo: nombres y apellidos."""
     if not user:
@@ -36,6 +17,9 @@ def _nombre_visible(user):
 
     # 1. Intentar método nombre_completo si existiera
     nombre_completo = getattr(user, "nombre_completo", None)
+    # if not user:
+    #     return "Usuario"
+
     if nombre_completo:
         return nombre_completo() if callable(nombre_completo) else nombre_completo
 
@@ -47,7 +31,6 @@ def _nombre_visible(user):
 
     # 3. Fallback: si no tiene nombre, usar email, sino "Usuario"
     return nombre_final or getattr(user, "email", "") or "Usuario"
-
 
 def _objeto_tipo(objeto, fallback=""):
     """Extrae el nombre del modelo de forma segura."""
@@ -148,7 +131,8 @@ def enviar_bienvenida(user):
         """Envía el correo de bienvenida utilizando las nuevas utilidades."""
         return _enviar(
             destinatario=user.email,
-            tipo=EmailLog.Tipo.BIENVENIDA,
+            # tipo=EmailLog.Tipo.BIENVENIDA,
+            tipo=EmailLog.TipoEmail.BIENVENIDA,
             asunto="Bienvenido a EasyChair",
             template_html="emails/bienvenida.html",
             template_text="emails/bienvenida.txt",
@@ -157,7 +141,8 @@ def enviar_bienvenida(user):
                 "display_name": _nombre_visible(user),
                 "frontend_url": _frontend_url()
             },
-            objeto_tipo=_objeto_tipo(user),
+            # objeto_tipo=_objeto_tipo(user), FUNCA, CAMBIADO PARA TEST UNITARIO
+            objeto_tipo="User",
             objeto_id=_objeto_id(user),
         )
 
@@ -174,6 +159,8 @@ def enviar_bienvenida(user):
 
 def enviar_asignacion_revisor(revisor, conferencia, ponencia):
     nombre_conferencia = getattr(conferencia, "nombre", "la conferencia")
+    titulo_ponencia = getattr(ponencia, "titulo", "la ponencia asignada")
+
 
     return _enviar(
         destinatario=revisor.email,
@@ -188,6 +175,31 @@ def enviar_asignacion_revisor(revisor, conferencia, ponencia):
             "conferencia": conferencia,
             "nombre_conferencia": nombre_conferencia,  # NEW Variable explícita para el template
             "ponencia": ponencia,
+            "titulo_ponencia": titulo_ponencia,  # NEW Variable explícita para el template
+            "frontend_url": _frontend_url(),
+        },
+        objeto_tipo=_objeto_tipo(ponencia, "Ponencia"),
+        objeto_id=_objeto_id(ponencia),
+    )
+
+
+def enviar_veredicto(autor, ponencia, veredicto, feedback_anonimo=None):
+    titulo_ponencia = getattr(ponencia, "titulo", "tu ponencia")
+    feedback = feedback_anonimo or []
+
+    return _enviar(
+        destinatario=autor.email,
+        tipo=EmailLog.TipoEmail.VEREDICTO,
+        asunto=f"Veredicto de tu ponencia - {titulo_ponencia}",
+        template_html="emails/veredicto.html",
+        template_text="emails/veredicto.txt",
+        context={
+            "autor": autor,
+            "autor_nombre": _nombre_visible(autor),
+            "ponencia": ponencia,
+            "titulo_ponencia": titulo_ponencia,
+            "veredicto": veredicto,
+            "feedback": feedback,
             "frontend_url": _frontend_url(),
         },
         objeto_tipo=_objeto_tipo(ponencia, "Ponencia"),

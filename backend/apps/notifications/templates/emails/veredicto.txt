@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+Hola {{ autor_nombre }},
+Tu ponencia "{{ titulo_ponencia }}" ha recibido un veredicto:
+{{ veredicto|upper }}
+{% if feedback %}Comentarios anonimos de los revisores:
+{% for comentario in feedback %}- {{ comentario }}
+{% endfor %}{% endif %}
+{% if frontend_url %}Ver en SmartChair: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

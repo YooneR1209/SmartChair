@@ -229,3 +229,24 @@ def enviar_cambio_fecha(user, conferencia):
         objeto_tipo=_objeto_tipo(conferencia, "Conferencia"),
         objeto_id=_objeto_id(conferencia),
     )
+
+
+def enviar_paper_reenviado(autor, ponencia):
+    titulo_ponencia = getattr(ponencia, "titulo", "tu ponencia")
+
+    return _enviar(
+        destinatario=autor.email,
+        tipo=EmailLog.TipoEmail.PAPER_REENVIADO,
+        asunto=f"Tu paper fue reenviado a revision - {titulo_ponencia}",
+        template_html="emails/paper_reenviado.html",
+        template_text="emails/paper_reenviado.txt",
+        context={
+            "autor": autor,
+            "display_name": _nombre_visible(autor),
+            "ponencia": ponencia,
+            "titulo_ponencia": titulo_ponencia,
+            "frontend_url": _frontend_url(),
+        },
+        objeto_tipo=_objeto_tipo(ponencia, "Ponencia"),
+        objeto_id=_objeto_id(ponencia),
+    )

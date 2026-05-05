@@ -12,6 +12,7 @@ from apps.notifications.services import (
     enviar_asignacion_revisor,
     enviar_bienvenida,
     enviar_cambio_fecha, #new, test cambio fecha.
+    enviar_paper_reenviado, # new, test paper reenviado.
     enviar_veredicto,
 )
 
@@ -128,4 +129,26 @@ class NotificationsServiceTests(TestCase):
         self.assertEqual(log.estado, EmailLog.Estado.ENVIADO)
         self.assertEqual(log.objeto_tipo, "Conferencia")
         self.assertEqual(log.objeto_id, 30)
+        self.assertEqual(EmailLog.objects.count(), 1)
+
+# NEW TEST PARA PAPER REENVIADO a revision por parte del autor.
+    def test_paper_reenviado_se_envia_y_registra_log(self):
+        autor = SimpleNamespace(
+            email="autor.paper@unl.edu.ec",
+            nombres="Lucia",
+            apellidos="Vega",
+        )
+        ponencia = SimpleNamespace(id=40, titulo="Sistema de revision academica")
+
+        log = enviar_paper_reenviado(autor, ponencia)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("reenviado a revision", mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ["autor.paper@unl.edu.ec"])
+        self.assertIn("Lucia Vega", mail.outbox[0].body)
+        self.assertIn("Sistema de revision academica", mail.outbox[0].body)
+        self.assertEqual(log.tipo, EmailLog.TipoEmail.PAPER_REENVIADO)
+        self.assertEqual(log.estado, EmailLog.Estado.ENVIADO)
+        self.assertEqual(log.objeto_tipo, "Ponencia")
+        self.assertEqual(log.objeto_id, 40)
         self.assertEqual(EmailLog.objects.count(), 1)

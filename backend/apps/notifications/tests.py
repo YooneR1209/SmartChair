@@ -1,6 +1,7 @@
 from django.test import TestCase
 
 from types import SimpleNamespace
+from datetime import date
 
 from django.core import mail
 from django.test import TestCase, override_settings
@@ -10,6 +11,7 @@ from apps.notifications.services import (
     _nombre_visible,
     enviar_asignacion_revisor,
     enviar_bienvenida,
+    enviar_cambio_fecha, #new, test cambio fecha.
     enviar_veredicto,
 )
 
@@ -76,6 +78,7 @@ class NotificationsServiceTests(TestCase):
         self.assertEqual(log.objeto_id, 10)
         self.assertEqual(EmailLog.objects.count(), 1)
 
+    # NEW TEST PARA CAMBIO DE FECHA de un evento.
     def test_veredicto_se_envia_con_feedback_y_registra_log(self):
         autor = SimpleNamespace(
             email="autor@unl.edu.ec",
@@ -96,4 +99,33 @@ class NotificationsServiceTests(TestCase):
         self.assertEqual(log.estado, EmailLog.Estado.ENVIADO)
         self.assertEqual(log.objeto_tipo, "Ponencia")
         self.assertEqual(log.objeto_id, 20)
+        self.assertEqual(EmailLog.objects.count(), 1)
+
+# NEW TEST PARA CAMBIO DE FECHA de un evento/congreso.
+    def test_cambio_fecha_se_envia_y_registra_log(self):
+        user = SimpleNamespace(
+            email="participante@unl.edu.ec",
+            nombres="Carlos",
+            apellidos="Mora",
+        )
+        conferencia = SimpleNamespace(
+            id=30,
+            nombre="Congreso SmartChair",
+            fecha_inicio=date(2026, 6, 10),
+            fecha_fin=date(2026, 6, 12),
+        )
+
+        log = enviar_cambio_fecha(user, conferencia)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Cambio de fechas", mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ["participante@unl.edu.ec"])
+        self.assertIn("Carlos Mora", mail.outbox[0].body)
+        self.assertIn("Congreso SmartChair", mail.outbox[0].body)
+        self.assertIn("10/06/2026", mail.outbox[0].body)
+        self.assertIn("12/06/2026", mail.outbox[0].body)
+        self.assertEqual(log.tipo, EmailLog.TipoEmail.CAMBIO_FECHA)
+        self.assertEqual(log.estado, EmailLog.Estado.ENVIADO)
+        self.assertEqual(log.objeto_tipo, "Conferencia")
+        self.assertEqual(log.objeto_id, 30)
         self.assertEqual(EmailLog.objects.count(), 1)

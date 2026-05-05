@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+Hola {{ display_name }},
+Las fechas de {{ nombre_conferencia }} han sido actualizadas.
+{% if fecha_inicio %}Fecha de inicio: {{ fecha_inicio|date:"d/m/Y" }}
+{% endif %}{% if fecha_fin %}Fecha de fin: {{ fecha_fin|date:"d/m/Y" }}
+{% endif %}
+{% if frontend_url %}Ver conferencia: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/conferencias/', include('apps.conferences.urls')),
+    path('api/conferencias/', include('apps.submissions.urls')),
 ]
 
 if settings.DEBUG:

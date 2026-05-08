@@ -9,29 +9,13 @@ from apps.notifications.views import (
 )
 
 urlpatterns = [
+    path("test/bienvenida/",test_bienvenida),
 
-    path(
-        "test/bienvenida/",
-        test_bienvenida
-    ),
+    path("test/asignacion-revisor/",test_asignacion_revisor),
 
-    path(
-        "test/asignacion-revisor/",
-        test_asignacion_revisor
-    ),
+    path("test/veredicto/",test_veredicto),
 
-    path(
-        "test/veredicto/",
-        test_veredicto
-    ),
+    path("test/cambio-fecha/",test_cambio_fecha),
 
-    path(
-        "test/cambio-fecha/",
-        test_cambio_fecha
-    ),
-
-    path(
-        "test/paper-reenviado/",
-        test_paper_reenviado
-    ),
+    path("test/paper-reenviado/",test_paper_reenviado),
 ]

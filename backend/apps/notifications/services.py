@@ -17,8 +17,6 @@ def _nombre_visible(user):
 
     # 1. Intentar método nombre_completo si existiera
     nombre_completo = getattr(user, "nombre_completo", None)
-    # if not user:
-    #     return "Usuario"
 
     if nombre_completo:
         return nombre_completo() if callable(nombre_completo) else nombre_completo
@@ -112,21 +110,6 @@ def _enviar(
             objeto_id=objeto_id,
         )
 
-
-#def enviar_bienvenida(user): CHECK 104 && 116
-    #display_name = user.get_full_name() or user.get_username()
-    #display_name = getattr(user, "email", "Usuario")
-
-    #YA FUNCABA
-    # display_name = (
-    #         getattr(user, "get_full_name", lambda: None)()
-    #         or getattr(user, "name", None)
-    #         or getattr(user, "email", None)
-    #         or "Usuario"
-    # )
-
-    #display_name = getattr(user, "nombre", None) or getattr(user, "name", None) or user.email
-
 def enviar_bienvenida(user):
         """Envía el correo de bienvenida utilizando las nuevas utilidades."""
         return _enviar(
@@ -145,17 +128,6 @@ def enviar_bienvenida(user):
             objeto_tipo="User",
             objeto_id=_objeto_id(user),
         )
-
-        # return _enviar(
-        #     destinatario=user.email,
-        #     tipo=EmailLog.Tipo.BIENVENIDA,
-        #     asunto="Bienvenido a EasyChair",
-        #     template_html="emails/bienvenida.html",
-        #     template_text="emails/bienvenida.txt",
-        #     context={"user": user, "display_name": display_name},
-        #     objeto_tipo=user._meta.label,
-        #     objeto_id=user.pk,
-        # )
 
 def enviar_asignacion_revisor(revisor, conferencia, ponencia):
     nombre_conferencia = getattr(conferencia, "nombre", "la conferencia")

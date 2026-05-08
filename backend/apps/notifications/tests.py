@@ -11,8 +11,8 @@ from apps.notifications.services import (
     _nombre_visible,
     enviar_asignacion_revisor,
     enviar_bienvenida,
-    enviar_cambio_fecha, #new, test cambio fecha.
-    enviar_paper_reenviado, # new, test paper reenviado.
+    enviar_cambio_fecha,
+    enviar_paper_reenviado,
     enviar_veredicto,
 )
 

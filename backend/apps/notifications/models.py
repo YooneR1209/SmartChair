@@ -30,16 +30,6 @@ class EmailLog(models.Model):
     objeto_tipo = models.CharField(max_length=50, blank=True)
     objeto_id = models.PositiveBigIntegerField(null=True, blank=True)
 
-    # destinatario = models.EmailField(db_index=True)
-    # tipo = models.CharField(max_length=50, choices=Tipo.choices, db_index=True)
-    # asunto = models.CharField(max_length=255)
-    # estado = models.CharField(max_length=20, choices=Estado.choices, db_index=True)
-    # error_msg = models.TextField(blank=True)
-    # enviado_en = models.DateTimeField(blank=True, null=True, db_index=True)
-    # creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
-    # objeto_tipo = models.CharField(max_length=100, blank=True, null=True)
-    # objeto_id = models.PositiveBigIntegerField(blank=True, null=True)
-
     class Meta:
         ordering = ["-creado_en"]
         indexes = [

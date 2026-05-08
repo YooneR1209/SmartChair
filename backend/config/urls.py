@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.accounts.urls')),
+    path('api/conferencias/', include('apps.conferences.urls')),
 
     # --- TESTS envio notificaciones (Insomnia)---
     path("api/notifications/",include("apps.notifications.urls")),

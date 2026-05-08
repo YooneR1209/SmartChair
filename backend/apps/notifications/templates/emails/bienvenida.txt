@@ -1,0 +1,5 @@
+Hola {{ display_name }},
+Tu cuenta fue creada correctamente. Ya puedes acceder a SmartChair.
+{% if frontend_url %}Ingresa aqui: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

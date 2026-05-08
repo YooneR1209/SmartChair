@@ -1,0 +1,11 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Bienvenido a SmartChair{% endblock %}
+
+{% block content %}
+  <p>Hola <strong>{{ display_name }}</strong>,</p>
+  <p>Tu cuenta fue creada correctamente. Ya puedes acceder a SmartChair.</p>
+  {% if frontend_url %}
+    <a class="btn" href="{{ frontend_url }}">Ir a SmartChair</a>
+  {% endif %}
+{% endblock %}

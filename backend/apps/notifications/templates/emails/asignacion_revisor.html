@@ -1,0 +1,18 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Nueva asignacion de revision{% endblock %}
+
+{% block content %}
+<!--  <p>Hola <strong>{{ revisor_nombre }}</strong>,</p>-->
+  <p>Hola <strong>{{ display_name }}</strong>,</p>
+<!--  <p>Se te ha asignado una nueva ponencia para revision en <strong>{{ conferencia.nombre }}</strong>.</p>-->
+  <p>Se te ha asignado una nueva ponencia para revision en <strong>{{ nombre_conferencia }}</strong>.</p>
+  <p>
+    <strong>Ponencia:</strong><br>
+<!--    {{ ponencia.titulo } ya funca igual que linea 8, comentado para pruebas unitarias-->
+    {{ titulo_ponencia }}
+  </p>
+  {% if frontend_url %}
+    <a class="btn" href="{{ frontend_url }}">Revisar asignacion</a>
+  {% endif %}
+{% endblock %}

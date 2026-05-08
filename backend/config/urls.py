@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.accounts.urls')),
 
+    # --- TESTS envio notificaciones (Insomnia)---
     path("api/notifications/",include("apps.notifications.urls")),
 ]
 

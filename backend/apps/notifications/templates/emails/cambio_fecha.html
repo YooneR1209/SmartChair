@@ -1,0 +1,21 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Cambio de fechas{% endblock %}
+
+{% block content %}
+  <p>Hola <strong>{{ display_name }}</strong>,</p>
+  <p>Las fechas de <strong>{{ nombre_conferencia }}</strong> han sido actualizadas.</p>
+
+  <p>
+    {% if fecha_inicio %}
+      <strong>Fecha de inicio:</strong> {{ fecha_inicio|date:"d/m/Y" }}<br>
+    {% endif %}
+    {% if fecha_fin %}
+      <strong>Fecha de fin:</strong> {{ fecha_fin|date:"d/m/Y" }}
+    {% endif %}
+  </p>
+
+  {% if frontend_url %}
+    <a class="btn" href="{{ frontend_url }}">Ver conferencia</a>
+  {% endif %}
+{% endblock %}

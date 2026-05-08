@@ -1,0 +1,6 @@
+Hola {{ display_name }},
+Tu paper "{{ titulo_ponencia }}" fue reenviado a revision despues de los cambios realizados.
+El equipo de revision recibira la nueva version para continuar el proceso.
+{% if frontend_url %}Ver paper: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

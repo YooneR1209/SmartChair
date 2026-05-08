@@ -1,0 +1,10 @@
+Hola {{ display_name  }},
+Se te ha asignado una nueva ponencia para revision en {{ conferencia.nombre }}.
+Se te ha asignado una nueva ponencia para revision en {{ nombre_conferencia }} (NEW version= prueba unitaria).
+Ponencia (el 2do es para prubea unitaria):
+{{ ponencia.titulo }}
+{{ titulo_ponencia  }}
+
+{% if frontend_url %}Revisar asignacion: {{ frontend_url }}{% endif %}
+Saludos,
+Equipo SmartChair

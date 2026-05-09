@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/conferencias/', include('apps.conferences.urls')),
     path('api/conferencias/', include('apps.submissions.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
+    path('api/payments/', include('apps.payments.urls')),
 ]
 
 if settings.DEBUG:

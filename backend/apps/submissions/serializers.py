@@ -72,6 +72,20 @@ class PonenciaDetailSerializer(serializers.ModelSerializer):
                 )
         return value
 
+    def validate(self, attrs):
+        # Solo aplica al crear (no al editar una ponencia existente)
+        if self.instance is not None:
+            return attrs
+        conferencia = self._get_conferencia()
+        autor = self.context['request'].user
+        if conferencia and Ponencia.objects.filter(
+            autor_principal=autor, conferencia=conferencia
+        ).exists():
+            raise serializers.ValidationError(
+                'Ya tienes una ponencia postulada en esta conferencia.'
+            )
+        return attrs
+
 
 class CambiarEstadoSerializer(serializers.Serializer):
     """Payload para cambiar el estado de una ponencia."""

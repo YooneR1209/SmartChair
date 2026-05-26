@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FLASH_User\\\\OneDrive\\\\Escritorio\\\\SmartChair\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\FLASH_User\\\\OneDrive\\\\Escritorio\\\\SmartChair\\\\backend\\\\apps\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(python manage.py makemigrations submissions)",
+      "Bash(python -c \"import dotenv\")",
+      "Bash(pip show *)",
+      "Bash(C:\\\\Users\\\\FLASH_User\\\\OneDrive\\\\Escritorio\\\\SmartChair\\\\.venv\\\\Scripts\\\\python.exe *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "PowerShell(& \"C:\\\\Users\\\\FLASH_User\\\\OneDrive\\\\Escritorio\\\\SmartChair\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\FLASH_User\\\\OneDrive\\\\Escritorio\\\\SmartChair\\\\backend\\\\manage.py\" makemigrations submissions --name unique_autor_por_conferencia)"
+    ]
+  }
+}

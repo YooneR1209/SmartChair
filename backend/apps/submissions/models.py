@@ -77,6 +77,12 @@ class Ponencia(models.Model):
         verbose_name        = 'Ponencia'
         verbose_name_plural = 'Ponencias'
         ordering            = ['-postulada_en']
+        constraints         = [
+            models.UniqueConstraint(
+                fields=['autor_principal', 'conferencia'],
+                name='unique_autor_por_conferencia',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.titulo} ({self.get_estado_display()})'

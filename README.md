@@ -263,3 +263,27 @@ Se utiliza la metodología **Git Flow** para mantener un desarrollo organizado:
     <img src="https://github.com/diegoih23/Pruebas-readme/blob/main/170268833.png" width="60" height="60" style="border-radius:50%;">
   </a>
 </p>
+
+
+# SmartChair Frontend
+
+## Description
+Frontend prototype for a paper review and blind peer-review management system.
+
+## Technologies
+- React
+- Vite
+- Tailwind CSS
+
+## Structure
+- components/
+- pages/
+- layouts/
+- services/
+
+## Run Project
+npm install
+npm run dev
+
+## SDD
+This project follows a Specification-Driven Development approach.

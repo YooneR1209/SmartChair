@@ -25,3 +25,11 @@ Future work
 - Add routing with `react-router` or `react-router-dom` once dependency choices are finalized.
 - Implement authentication flow and token storage.
 - Add unit and integration tests for components and services.
+
+## Planned Modules
+
+- Authentication
+- Paper Submission
+- Blind Peer Review
+- Reviewer Dashboard
+- Administration Panel

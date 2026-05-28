@@ -282,7 +282,10 @@ Frontend prototype for a paper review and blind peer-review management system.
 - services/
 
 ## Run Project
+cd frontend
+
 npm install
+
 npm run dev
 
 ## SDD

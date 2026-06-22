@@ -9,7 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'insecure-dev-key')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -40,6 +41,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS + ["apps.notificati
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -72,16 +74,32 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'smartchair_db'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+        'NAME': os.getenv('MYSQL_DATABASE') or os.getenv('DB_NAME', 'smartchair_db'),
+        'USER': os.getenv('MYSQL_USER') or os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD') or os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('MYSQL_HOST') or os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('MYSQL_PORT') or os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
     }
 }
+
+# Railway MySQL URL fallback
+MYSQL_URL = os.getenv('MYSQL_URL')
+if MYSQL_URL:
+    import re
+    match = re.match(r'mysql://(.+):(.+)@(.+):(\d+)/(.+)', MYSQL_URL)
+    if match:
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': match.group(5),
+            'USER': match.group(1),
+            'PASSWORD': match.group(2),
+            'HOST': match.group(3),
+            'PORT': match.group(4),
+            'OPTIONS': {'charset': 'utf8mb4'},
+        }
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -116,13 +134,9 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# ✅ CORS configurado para ambos puertos (5173 y 5174)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-]
+# ✅ CORS
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174').split(',')
+CORS_ALLOW_CREDENTIALS = True
 
 LANGUAGE_CODE = 'es-ec'
 TIME_ZONE = 'America/Guayaquil'
@@ -131,6 +145,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

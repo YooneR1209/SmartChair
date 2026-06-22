@@ -37,6 +37,7 @@ function Register() {
         nombres: form.nombres,
         apellidos: form.apellidos,
         password: form.password,
+        password2: form.confirmPassword,
       });
       addToast('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
       navigate('/login', { replace: true });

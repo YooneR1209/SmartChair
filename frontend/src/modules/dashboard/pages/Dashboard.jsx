@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { postulaciones, conferencias, reviews, admin } from '../../../shared/services/api';
+import { postulaciones, conferencias, reviews, admin, certificados, getToken } from '../../../shared/services/api';
 import { on } from '../../../shared/services/events';
 import { STATUS_MAP, normalizeStatus, Stepper } from '../../../shared/utils/statusMap.jsx';
 
@@ -258,7 +258,7 @@ function Dashboard() {
         Comparte tus hallazgos con la comunidad académica global.
       </p>
       <button
-        onClick={() => navigate('/conferencias')}
+        onClick={() => navigate('/mis-ponencias')}
         style={{
           width: '100%',
           padding: '10px 0',
@@ -389,6 +389,7 @@ function Dashboard() {
     return (
       <div
         key={sub.id}
+        onClick={() => { const s = sub.conferencia_slug ? `/mis-ponencias?ponencia=${sub.id}` : '/mis-ponencias'; navigate(s); }}
         style={{
           background: '#FFFFFF',
           border: '1px solid #E5E8EB',
@@ -453,6 +454,23 @@ function Dashboard() {
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           {key === 'aceptada' && (
             <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                const token = getToken();
+                const resp = await fetch(certificados.descargar(sub.id), {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!resp.ok) return;
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `certificado-${sub.id}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -470,6 +488,10 @@ function Dashboard() {
           )}
           {key === 'rechazada' && (
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/mis-ponencias?ponencia=${sub.id}`);
+              }}
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -484,8 +506,16 @@ function Dashboard() {
               Ver Feedback
             </button>
           )}
-          {key === 'cambios' && (
+          {key === 'aceptada_con_cambios' && (
             <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (sub.conferencia_slug) {
+                  navigate(`/conferencias/${sub.conferencia_slug}`);
+                } else {
+                  navigate('/conferencias');
+                }
+              }}
               style={{
                 fontSize: '11px',
                 fontWeight: 700,
@@ -798,7 +828,7 @@ function Dashboard() {
           <div>
             {sectionHeader('Mis Ponencias Recientes', 'Ver todas', '/mis-ponencias')}
             {recentSubs.length === 0
-              ? emptyCard('description', 'No tienes ponencias todavía.', '+ Nueva Participación', () => navigate('/conferencias'))
+              ? emptyCard('description', 'No tienes ponencias todavía.', '+ Nueva Participación', () => navigate('/mis-ponencias'))
               : <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>{recentSubs.map(renderSubmissionCard)}</div>
             }
           </div>

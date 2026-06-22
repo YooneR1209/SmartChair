@@ -4,8 +4,9 @@ from .models import User
 
 
 class RegistroSerializer(serializers.ModelSerializer):
-    password  = serializers.CharField(write_only=True, validators=[validate_password])
-    password2 = serializers.CharField(write_only=True, label='Confirmar contraseña')
+    password     = serializers.CharField(write_only=True, validators=[validate_password])
+    password2    = serializers.CharField(write_only=True, label='Confirmar contraseña')
+    institucion  = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model  = User

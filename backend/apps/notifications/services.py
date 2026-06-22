@@ -178,6 +178,27 @@ def enviar_veredicto(autor, ponencia, veredicto, feedback_anonimo=None):
         objeto_id=_objeto_id(ponencia),
     )
 
+def enviar_invitacion_revisor(invitacion):
+    conferencia = invitacion.conferencia
+    nombre_conferencia = getattr(conferencia, "nombre", "la conferencia")
+    return _enviar(
+        destinatario=invitacion.email,
+        tipo=EmailLog.TipoEmail.INVITACION_REVISOR,
+        asunto=f"Invitacion como revisor - {nombre_conferencia}",
+        template_html="emails/invitacion_revisor.html",
+        template_text="emails/invitacion_revisor.txt",
+        context={
+            "invitacion": invitacion,
+            "conferencia": conferencia,
+            "nombre_conferencia": nombre_conferencia,
+            "display_name": invitacion.email,
+            "frontend_url": _frontend_url(),
+        },
+        objeto_tipo="InvitacionRevisor",
+        objeto_id=invitacion.id,
+    )
+
+
 def enviar_cambio_fecha(user, conferencia):
     nombre_conferencia = getattr(conferencia, "nombre", "la conferencia")
     fecha_inicio = getattr(conferencia, "fecha_inicio", None)

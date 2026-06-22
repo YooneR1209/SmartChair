@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from decimal import Decimal
+import stripe
+from django.conf import settings
 import secrets
 
 from .models import Conferencia, ConferenciaUsuario, InvitacionRevisor
@@ -13,6 +16,7 @@ from .serializers import (
     InvitacionRevisorSerializer,
 )
 from .permissions import EsOrganizadorOAdmin
+from apps.payments.models import Pago
 
 
 class ConferenciaListCreateView(generics.ListCreateAPIView):
@@ -21,6 +25,7 @@ class ConferenciaListCreateView(generics.ListCreateAPIView):
     POST — crea una nueva conferencia (organizador o admin).
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -34,15 +39,20 @@ class ConferenciaListCreateView(generics.ListCreateAPIView):
         if user.rol == 'administrador':
             return qs.all()
 
-        # Públicas + privadas donde el usuario tiene rol
+        # Públicas + privadas donde el usuario tiene rol + las que organiza
         from django.db.models import Q
         return qs.filter(
             Q(visibilidad='publica') |
-            Q(participantes__usuario=user, participantes__activo=True)
+            Q(participantes__usuario=user, participantes__activo=True) |
+            Q(organizador=user)
         ).distinct()
 
     def perform_create(self, serializer):
-        serializer.save()
+        user = self.request.user
+        if user.rol not in ('organizador', 'administrador'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Solo organizadores o administradores pueden crear conferencias.')
+        serializer.save(organizador=user, estado=Conferencia.Estado.ABIERTA)
 
 
 class ConferenciaDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -102,6 +112,7 @@ class ParticipantesView(generics.ListCreateAPIView):
     """Lista y agrega participantes a una conferencia."""
     serializer_class   = ConferenciaUsuarioSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_conferencia(self):
         return get_object_or_404(Conferencia, slug=self.kwargs['slug'])
@@ -113,6 +124,34 @@ class ParticipantesView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(conferencia=self.get_conferencia())
+
+
+class RevisoresDisponiblesView(APIView):
+    """Lista usuarios disponibles como revisores (rol global revisor o en ConferenciaUsuario)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, slug):
+        conferencia = get_object_or_404(Conferencia, slug=slug)
+        if not (request.user.es_administrador or request.user.es_organizador or conferencia.organizador == request.user):
+            return Response({'detail': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        from apps.accounts.models import User
+        # Usuarios con rol global 'revisor'
+        revisores_globales = User.objects.filter(rol='revisor', is_active=True)
+        # Usuarios en ConferenciaUsuario con rol revisor
+        ids_conferencia = ConferenciaUsuario.objects.filter(
+            conferencia=conferencia, rol='revisor', activo=True
+        ).values_list('usuario_id', flat=True)
+        combinados = revisores_globales | User.objects.filter(id__in=ids_conferencia, is_active=True)
+        combinados = combinados.distinct()
+        data = [{
+            'id': u.id,
+            'email': u.email,
+            'nombres': u.nombres,
+            'apellidos': u.apellidos,
+            'nombre_completo': u.nombre_completo,
+            'rol': u.rol,
+        } for u in combinados]
+        return Response(data)
 
 
 class InvitarRevisorView(generics.CreateAPIView):
@@ -137,9 +176,8 @@ class InvitarRevisorView(generics.CreateAPIView):
             invitacion.save(update_fields=['usuario'])
         except User.DoesNotExist:
             pass
-        # Notificar (cuando notifications esté listo)
-        # from apps.notifications.services import enviar_invitacion_revisor
-        # enviar_invitacion_revisor(invitacion)
+        from apps.notifications.services import enviar_invitacion_revisor
+        enviar_invitacion_revisor(invitacion)
 
 
 class AceptarInvitacionView(APIView):
@@ -169,3 +207,83 @@ class AceptarInvitacionView(APIView):
         )
 
         return Response({'detail': 'Invitación aceptada. Ahora eres revisor de esta conferencia.'})
+
+
+class InscribirView(APIView):
+    """Inscribe al usuario autenticado en la conferencia con el rol indicado.
+    Si la conferencia es de pago, crea un PaymentIntent de Stripe."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, slug):
+        conferencia = get_object_or_404(Conferencia, slug=slug)
+
+        if conferencia.estado != Conferencia.Estado.ABIERTA:
+            return Response(
+                {'detail': 'La conferencia no está abierta para inscripciones.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rol = request.data.get('rol', ConferenciaUsuario.RolEnConferencia.ASISTENTE)
+        roles_validos = [r.value for r in ConferenciaUsuario.RolEnConferencia]
+        if rol not in roles_validos:
+            return Response(
+                {'detail': f'Rol inválido. Debe ser uno de: {", ".join(roles_validos)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        usuario = request.user
+        inscripcion, created = ConferenciaUsuario.objects.get_or_create(
+            conferencia=conferencia,
+            usuario=usuario,
+            rol=rol,
+            defaults={'activo': True},
+        )
+
+        if not created:
+            return Response(
+                {'detail': 'Ya estás inscrito en esta conferencia con ese rol.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = {
+            'success': True,
+            'detail': 'Inscripción exitosa.',
+            'rol': rol,
+        }
+
+        if conferencia.es_de_pago and conferencia.monto_inscripcion:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            monto_centavos = int(Decimal(str(conferencia.monto_inscripcion)) * 100)
+            try:
+                intent = stripe.PaymentIntent.create(
+                    amount=monto_centavos,
+                    currency='usd',
+                    metadata={
+                        'usuario_id': str(usuario.id),
+                        'conferencia_slug': slug,
+                        'referencia_tipo': 'Inscripcion',
+                        'inscripcion_id': str(inscripcion.id),
+                    },
+                )
+                pago = Pago.objects.create(
+                    usuario=usuario,
+                    stripe_payment_intent_id=intent['id'],
+                    monto=conferencia.monto_inscripcion,
+                    moneda='usd',
+                    referencia_tipo='Inscripcion',
+                    referencia_id=inscripcion.id,
+                )
+                result['client_secret'] = intent['client_secret']
+                result['pago_id'] = pago.id
+                result['monto'] = str(conferencia.monto_inscripcion)
+                result['requires_payment'] = True
+            except stripe.error.StripeError:
+                inscripcion.delete()
+                return Response(
+                    {'detail': 'Error al procesar el pago. Intenta de nuevo.'},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+        else:
+            result['requires_payment'] = False
+
+        return Response(result, status=status.HTTP_201_CREATED)

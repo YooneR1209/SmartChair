@@ -6,7 +6,7 @@ from .models import Ponencia, RespuestaFormulario
 
 # Transiciones de estado permitidas para el organizador/admin
 _TRANSICIONES_VALIDAS = {
-    Ponencia.Estado.POSTULADA:            {Ponencia.Estado.EN_REVISION, Ponencia.Estado.RECHAZADA},
+    Ponencia.Estado.POSTULADA:            {Ponencia.Estado.EN_REVISION, Ponencia.Estado.RECHAZADA, Ponencia.Estado.ACEPTADA, Ponencia.Estado.ACEPTADA_CON_CAMBIOS},
     Ponencia.Estado.EN_REVISION:          {Ponencia.Estado.ACEPTADA, Ponencia.Estado.RECHAZADA, Ponencia.Estado.ACEPTADA_CON_CAMBIOS},
     Ponencia.Estado.ACEPTADA_CON_CAMBIOS: {Ponencia.Estado.RECHAZADA},
     Ponencia.Estado.CAMBIOS_ENVIADOS:     {Ponencia.Estado.ACEPTADA, Ponencia.Estado.RECHAZADA, Ponencia.Estado.ACEPTADA_CON_CAMBIOS},
@@ -27,15 +27,10 @@ def postular_ponencia(conferencia, autor, datos, respuestas=None):
     Returns:
         Ponencia recién creada.
     """
-    if not conferencia.esta_abierta_postulacion():
+    if not (autor.es_administrador or autor.es_organizador) and not conferencia.esta_abierta_postulacion():
         raise ValidationError('La conferencia no está abierta para postulaciones.')
 
     area_tematica = datos.get('area_tematica', '')
-    if conferencia.areas_tematicas and area_tematica not in conferencia.areas_tematicas:
-        raise ValidationError(
-            {'area_tematica': f'El área "{area_tematica}" no está disponible. '
-                              f'Áreas válidas: {", ".join(conferencia.areas_tematicas)}.'}
-        )
 
     archivo = datos.get('archivo')
     if archivo and conferencia.formatos_archivo_permitidos:
@@ -104,9 +99,10 @@ def cambiar_estado(ponencia, nuevo_estado, usuario):
     Valida que la transición sea permitida según el flujo definido.
     """
     user_es_admin = getattr(usuario, 'rol', '') == 'administrador'
-    es_organizador = ponencia.conferencia.organizador == usuario
+    user_es_organizador = getattr(usuario, 'rol', '') == 'organizador'
+    es_organizador_conf = ponencia.conferencia.organizador == usuario
 
-    if not (user_es_admin or es_organizador):
+    if not (user_es_admin or user_es_organizador or es_organizador_conf):
         raise PermissionDenied('Solo el organizador o un administrador puede cambiar el estado.')
 
     estado_actual = ponencia.estado

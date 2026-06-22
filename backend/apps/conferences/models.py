@@ -137,6 +137,18 @@ class Conferencia(Evento):
     def __str__(self):
         return f'{self.nombre} ({self.get_estado_display()})'
 
+    def save(self, *args, **kwargs):
+        if not self.slug and self.nombre:
+            from django.utils.text import slugify
+            base = slugify(self.nombre)[:200]
+            slug = base
+            n = 1
+            while Conferencia.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f'{base}-{n}'
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
     def esta_abierta_postulacion(self):
         from django.utils import timezone
         hoy = timezone.now().date()
@@ -167,6 +179,7 @@ class ConferenciaUsuario(models.Model):
         ORGANIZADOR = 'organizador', 'Organizador'
         REVISOR     = 'revisor',     'Revisor'
         AUTOR       = 'autor',       'Autor'
+        ASISTENTE   = 'asistente',   'Asistente'
         SUPERVISOR  = 'supervisor',  'Supervisor'  # RF-21: diferido
 
     conferencia = models.ForeignKey(

@@ -37,7 +37,7 @@ class AsignarRevisorTests(TestCase):
         self.ponencia = MagicMock()
         self.ponencia.id = 1
         self.ponencia.pk = 1  # ← agregar esta línea
-        self.ponencia.autor = self.autor
+        self.ponencia.autor_principal = self.autor
         self.ponencia.conferencia = self.conferencia
         self.ponencia.area_tematica = "IA"
 
@@ -78,7 +78,7 @@ class CompletarRevisionTests(TestCase):
         conferencia.organizador = organizador
 
         ponencia = MagicMock()
-        ponencia.autor = autor
+        ponencia.autor_principal = autor
         ponencia.conferencia = conferencia
         ponencia.pago_completado = False
 

@@ -14,7 +14,7 @@ class EsOrganizadorDeLaConferencia(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         user = request.user
-        if user.rol == 'administrador':
+        if user.rol == 'administrador' or user.rol == 'organizador':
             return True
         return obj.conferencia.organizador == user
 
@@ -31,7 +31,7 @@ class PuedeVerPonencia(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        if user.rol == 'administrador':
+        if user.rol == 'administrador' or user.rol == 'organizador':
             return True
 
         if obj.autor_principal == user:

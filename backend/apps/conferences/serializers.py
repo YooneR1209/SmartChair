@@ -18,7 +18,7 @@ class ConferenciaListSerializer(serializers.ModelSerializer):
             'id', 'nombre', 'slug', 'descripcion', 'estado', 'visibilidad',
             'imagen_banner', 'lugar', 'fecha_inicio', 'fecha_fin',
             'fecha_cierre_postulaciones', 'es_de_pago', 'monto_inscripcion',
-            'organizador_nombre', 'esta_abierta',
+            'areas_tematicas', 'organizador_nombre', 'esta_abierta',
         )
 
     def get_esta_abierta(self, obj):

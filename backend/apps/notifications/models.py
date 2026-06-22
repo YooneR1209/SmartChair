@@ -10,6 +10,7 @@ class EmailLog(models.Model):
         FEEDBACK = "feedback", "Feedback anonimo"
         CAMBIO_FECHA = "cambio_fecha", "Cambio de fecha"
         PAPER_REENVIADO = "paper_reenviado", "Paper reenviado a revision"
+        INVITACION_REVISOR = "invitacion_revisor", "Invitacion a revisor"
 
     class Estado(models.TextChoices):
         ENVIADO = "enviado", "Enviado"

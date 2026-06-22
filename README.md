@@ -97,7 +97,7 @@ El sistema sigue una arquitectura **cliente-servidor** basada en API REST.
 * 🌐 **Django**
 * 🔌 **Django REST Framework**
 * 🗄️ **MariaDB**
-* ⚙️ ORM de Django
+* ⚙️ **ORM de Django**
 
 ### Ventajas:
 

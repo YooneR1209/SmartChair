@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["python311", "mysqlclient", "zlib", "pkg-config", "cacert"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]

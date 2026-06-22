@@ -64,26 +64,66 @@ class MiAsignacionSerializer(serializers.ModelSerializer):
     """Lista las asignaciones activas de un revisor."""
     ponencia_id = serializers.IntegerField(source="ponencia.id", read_only=True)
     titulo = serializers.CharField(source="ponencia.titulo", read_only=True)
+    resumen = serializers.CharField(source="ponencia.resumen", read_only=True)
+    area_tematica = serializers.CharField(source="ponencia.area_tematica", read_only=True)
     conferencia = serializers.CharField(
         source="ponencia.conferencia.nombre", read_only=True
     )
+    revision_id = serializers.SerializerMethodField()
     estado_revision = serializers.SerializerMethodField()
+    veredicto = serializers.SerializerMethodField()
+    comentario_autor = serializers.SerializerMethodField()
+    comentario_privado = serializers.SerializerMethodField()
+    archivo = serializers.SerializerMethodField()
 
     class Meta:
         model = AsignacionRevisor
         fields = (
             "id",
             "ponencia_id",
+            "revision_id",
             "titulo",
+            "resumen",
+            "area_tematica",
             "conferencia",
+            "archivo",
             "es_desempate",
             "asignado_en",
             "estado_revision",
+            "veredicto",
+            "comentario_autor",
+            "comentario_privado",
         )
 
-    def get_estado_revision(self, obj):
+    def get_revision(self, obj):
         if hasattr(obj, "revision"):
-            return obj.revision.estado
+            return obj.revision
+        return None
+
+    def get_revision_id(self, obj):
+        rev = self.get_revision(obj)
+        return rev.id if rev else None
+
+    def get_estado_revision(self, obj):
+        rev = self.get_revision(obj)
+        return rev.estado if rev else None
+
+    def get_veredicto(self, obj):
+        rev = self.get_revision(obj)
+        return rev.veredicto if rev else None
+
+    def get_comentario_autor(self, obj):
+        rev = self.get_revision(obj)
+        return rev.comentario_autor if rev else None
+
+    def get_comentario_privado(self, obj):
+        rev = self.get_revision(obj)
+        return rev.comentario_privado if rev else None
+
+    def get_archivo(self, obj):
+        rev = self.get_revision(obj)
+        if rev and rev.asignacion.ponencia.archivo:
+            return rev.asignacion.ponencia.archivo.url
         return None
 
 

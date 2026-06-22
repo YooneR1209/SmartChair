@@ -1,0 +1,334 @@
+@media (max-width: 767px) {
+
+  /* ──── AUTH PAGES (Login, Register) ──── */
+  .auth-split {
+    grid-template-columns: 1fr !important;
+  }
+  .auth-left {
+    display: none !important;
+  }
+  .auth-right {
+    padding: 32px 20px !important;
+  }
+
+  /* ──── LAYOUT ──── */
+  .layout-content {
+    margin-left: 0 !important;
+  }
+  .layout-main {
+    padding: 12px !important;
+  }
+  .layout-header {
+    padding: 10px 12px !important;
+  }
+
+  /* ──── SIDEBAR ──── */
+  .sidebar-desktop {
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s ease !important;
+  }
+  .sidebar-desktop.open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-overlay {
+    display: block !important;
+  }
+
+  /* ──── HEADER ──── */
+  .header-search {
+    width: 100% !important;
+    max-width: 200px !important;
+  }
+  .header-search input {
+    font-size: 13px !important;
+  }
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* ──── PAGE TITLES (inline style override) ──── */
+  .layout-main [style*="font-size:28px"],
+  .layout-main [style*="font-size: 28px"] {
+    font-size: 22px !important;
+  }
+  .layout-main [style*="font-size:1.85rem"],
+  .layout-main [style*="font-size: 1.85rem"] {
+    font-size: 1.3rem !important;
+  }
+  .layout-main [style*="font-size:1.8rem"],
+  .layout-main [style*="font-size: 1.8rem"] {
+    font-size: 1.35rem !important;
+  }
+
+  /* Breadcrumb text */
+  .layout-main [style*="font-size:0.78rem"],
+  .layout-main [style*="font-size: 0.78rem"] {
+    font-size: 0.7rem !important;
+  }
+
+  /* ──── GRID: 2 columns → 1 ──── */
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ──── LOGIN / REGISTER NAME FIELDS ──── */
+  .auth-right [style*="grid-template-columns: 1fr 1fr"],
+  .auth-right [style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ──── ADMIN TAB BAR ──── */
+  .admin-tabs {
+    overflow-x: auto !important;
+    gap: 2px !important;
+  }
+  .admin-tabs button {
+    flex: none !important;
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    min-width: 70px !important;
+  }
+  .admin-tabs button span {
+    font-size: 16px !important;
+  }
+
+  /* ──── ADMIN CSS-GRID TABLES ──── */
+  .table-scroll [style*="display: grid"],
+  .table-scroll [style*="display:grid"] {
+    grid-template-columns: none !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px 8px !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  .table-scroll [style*="display: grid"] > *,
+  .table-scroll [style*="display:grid"] > * {
+    flex: 1 1 45% !important;
+    min-width: 0 !important;
+  }
+
+  /* ──── ADMIN STAT CARDS ──── */
+  .admin-panel .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .admin-panel .stats-grid > div {
+    padding: 12px !important;
+    gap: 6px !important;
+  }
+  .admin-panel .stats-grid [style*="font-size: 28px"],
+  .admin-panel .stats-grid [style*="font-size:28px"] {
+    font-size: 20px !important;
+  }
+
+  /* ──── ADMIN SECTION HEADERS ──── */
+  .admin-panel [style*="margin: 0 0 16px 0"][style*="font-size: 16px"] {
+    font-size: 14px !important;
+  }
+
+  /* ──── ADMIN FILTER BAR (postulaciones) ──── */
+  .admin-panel [style*="flex-wrap: wrap"][style*="background: #F5F7FA"],
+  .admin-panel [style*="flex-wrap:wrap"][style*="background: #F5F7FA"] {
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  .admin-panel [style*="flex-wrap: wrap"][style*="background: #F5F7FA"] select,
+  .admin-panel [style*="flex-wrap:wrap"][style*="background: #F5F7FA"] select,
+  .admin-panel [style*="flex-wrap: wrap"][style*="background: #F5F7FA"] input,
+  .admin-panel [style*="flex-wrap:wrap"][style*="background: #F5F7FA"] input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* ──── ADMIN USER SEARCH INPUT ──── */
+  .admin-panel [style*="max-width: 360px"] {
+    max-width: 100% !important;
+  }
+
+  /* ──── ADMIN TABLE ROWS: show fewer cols on mobile ──── */
+  .admin-panel .table-scroll {
+    border-radius: 8px !important;
+  }
+  .admin-panel .table-scroll [style*="display: grid"],
+  .admin-panel .table-scroll [style*="display:grid"] {
+    padding: 8px 10px !important;
+    gap: 3px 6px !important;
+    font-size: 11px !important;
+  }
+  .admin-panel .table-scroll [style*="display: grid"] > *,
+  .admin-panel .table-scroll [style*="display:grid"] > * {
+    flex: 1 1 48% !important;
+  }
+  /* Hide some non-essential columns on mobile */
+  .admin-panel .table-scroll [style*="grid-template-columns: 1.5fr 2fr 1.2fr 1.2fr 1.2fr 1fr"] > :nth-child(4),
+  .admin-panel .table-scroll [style*="grid-template-columns:1.5fr 2fr 1.2fr 1.2fr 1.2fr 1fr"] > :nth-child(4),
+  .admin-panel .table-scroll [style*="grid-template-columns: 1.5fr 2fr 1.2fr 1.2fr 1.2fr 1fr"] > :nth-child(5),
+  .admin-panel .table-scroll [style*="grid-template-columns:1.5fr 2fr 1.2fr 1.2fr 1.2fr 1fr"] > :nth-child(5) {
+    display: none !important;
+  }
+  .admin-panel .table-scroll [style*="grid-template-columns: 2fr 2fr 1fr 120px"] > :nth-child(2),
+  .admin-panel .table-scroll [style*="grid-template-columns:2fr 2fr 1fr 120px"] > :nth-child(2) {
+    display: none !important;
+  }
+  .admin-panel .table-scroll [style*="grid-template-columns: 2fr 1.5fr 1fr 1.2fr 1fr 1fr"] > :nth-child(3),
+  .admin-panel .table-scroll [style*="grid-template-columns:2fr 1.5fr 1fr 1.2fr 1fr 1fr"] > :nth-child(3),
+  .admin-panel .table-scroll [style*="grid-template-columns: 2fr 1.5fr 1fr 1.2fr 1fr 1fr"] > :nth-child(4),
+  .admin-panel .table-scroll [style*="grid-template-columns:2fr 1.5fr 1fr 1.2fr 1fr 1fr"] > :nth-child(4) {
+    display: none !important;
+  }
+  .admin-panel .table-scroll [style*="grid-template-columns: 1.5fr 1fr 1.2fr 1.5fr 1.2fr"] > :nth-child(4),
+  .admin-panel .table-scroll [style*="grid-template-columns:1.5fr 1fr 1.2fr 1.5fr 1.2fr"] > :nth-child(4) {
+    display: none !important;
+  }
+
+  /* ──── STAT CARDS ──── */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* Reduce stat card padding */
+  .stats-grid [style*="padding: 20px"],
+  .stats-grid [style*="padding:20px"],
+  .stats-grid [style*="padding: 18px 20px"],
+  .stats-grid [style*="padding:18px 20px"],
+  .stats-grid [style*="padding: 16px"],
+  .stats-grid [style*="padding:16px"] {
+    padding: 12px !important;
+  }
+
+  /* ──── SCROLLABLE TABLES ──── */
+  .table-scroll {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .table-scroll table {
+    font-size: 13px !important;
+  }
+  .table-scroll th,
+  .table-scroll td {
+    padding: 10px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* ──── DETALLE CONFERENCIA ──── */
+  .detalle-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ──── PERFIL ──── */
+  .perfil-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .layout-main [style*="max-width: 720px"],
+  .layout-main [style*="max-width:720px"] {
+    max-width: 100% !important;
+  }
+
+  /* ──── DASHBOARD ──── */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ──── MIS REVISIONES ──── */
+  .revisiones-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ──── CARDS / PAPER COMPONENTS (inline style override) ──── */
+  /* Card padding reduction */
+  .layout-main [style*="padding: 24px"],
+  .layout-main [style*="padding:24px"] {
+    padding: 16px !important;
+  }
+  .layout-main [style*="padding: 20px"],
+  .layout-main [style*="padding:20px"] {
+    padding: 14px !important;
+  }
+
+  /* ──── CONFERENCIAS GRID ──── */
+  .layout-main [style*="repeat(auto-fill, minmax(340px, 1fr))"],
+  .layout-main [style*="repeat(auto-fill,minmax(340px, 1fr))"],
+  .layout-main [style*="repeat(auto-fill,minmax(340px,1fr))"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ──── MODALS (overlays) ──── */
+  [style*="position: fixed"][style*="z-index: 9999"] > [style*="max-width: 720px"],
+  [style*="position: fixed"][style*="z-index: 9999"] > [style*="max-width:720px"] {
+    max-width: 92vw !important;
+    padding: 24px 20px !important;
+  }
+  [style*="position: fixed"][style*="z-index: 9999"] [style*="max-width: 520px"],
+  [style*="position: fixed"][style*="z-index: 9999"] [style*="max-width:520px"] {
+    max-width: 92vw !important;
+    padding: 20px !important;
+  }
+
+  /* Role selector grid on mobile */
+  [style*="position: fixed"][style*="z-index: 9999"] [style*="grid-template-columns: repeat(2, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ──── NOTIFICATION PANEL ──── */
+  [class*="layout-header"] [style*="position: absolute"][style*="width: 380px"],
+  [class*="layout-header"] [style*="position:absolute"][style*="width:380px"] {
+    width: 92vw !important;
+    right: 4px !important;
+  }
+
+  /* ──── TOAST CONTAINER ──── */
+  [style*="position: fixed"][style*="top: 16px"][style*="right: 16px"],
+  [style*="position:fixed"][style*="top:16px"][style*="right:16px"] {
+    right: 8px !important;
+    max-width: 92vw !important;
+  }
+
+  /* ──── FILTER BAR (MisPonencias) ──── */
+  .layout-main [style*="flex-wrap: wrap"],
+  .layout-main [style*="flex-wrap:wrap"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .layout-main [style*="flex-wrap: wrap"] input,
+  .layout-main [style*="flex-wrap:wrap"] input,
+  .layout-main [style*="flex-wrap: wrap"] select,
+  .layout-main [style*="flex-wrap:wrap"] select {
+    width: 100% !important;
+  }
+
+  /* ──── CERTIFICADOS CARDS ──── */
+  .layout-main [style*="justify-content: space-between"][style*="align-items: center"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+}
+
+/* ──── TABLET (768px – 1024px) ──── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .layout-main {
+    padding: 20px !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr 240px !important;
+  }
+  .layout-main [style*="repeat(auto-fill, minmax(340px, 1fr))"],
+  .layout-main [style*="repeat(auto-fill,minmax(340px, 1fr))"],
+  .layout-main [style*="repeat(auto-fill,minmax(340px,1fr))"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

@@ -3,6 +3,7 @@ from .views import (
     PonenciaListCreateView, PonenciaDetailView,
     CambiarEstadoView, ConfirmarPagoView, EnviarCambiosView,
 )
+from .certificate_views import CertificadoListView, CertificadoDescargarView
 
 urlpatterns = [
     # Listado y creación agrupados por conferencia
@@ -13,4 +14,8 @@ urlpatterns = [
     path('ponencias/<int:pk>/cambiar-estado/',        CambiarEstadoView.as_view(),       name='ponencia-cambiar-estado'),
     path('ponencias/<int:pk>/confirmar-pago/',        ConfirmarPagoView.as_view(),       name='ponencia-confirmar-pago'),
     path('ponencias/<int:pk>/enviar-cambios/',        EnviarCambiosView.as_view(),       name='ponencia-enviar-cambios'),
+
+    # Certificados
+    path('certificados/',                             CertificadoListView.as_view(),     name='certificado-list'),
+    path('certificados/<int:ponencia_id>/descargar/', CertificadoDescargarView.as_view(), name='certificado-descargar'),
 ]

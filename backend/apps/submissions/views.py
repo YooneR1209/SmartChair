@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
-from apps.conferences.models import Conferencia
+from apps.conferences.models import Conferencia, ConferenciaUsuario
 from .models import Ponencia
 from .serializers import (
     PonenciaListSerializer, PonenciaDetailSerializer,
@@ -20,6 +20,7 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
     POST — crea (postula) una nueva ponencia en la conferencia.
     """
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_conferencia(self):
         return get_object_or_404(Conferencia, slug=self.kwargs['slug'])
@@ -39,7 +40,14 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
         conferencia = self.get_conferencia()
         qs          = Ponencia.objects.filter(conferencia=conferencia).select_related('autor_principal')
 
-        if user.rol == 'administrador' or conferencia.organizador == user:
+        if user.rol in ('administrador', 'organizador'):
+            return qs
+        if conferencia.organizador == user:
+            return qs
+        if ConferenciaUsuario.objects.filter(
+            conferencia=conferencia, usuario=user,
+            rol__in=('organizador', 'revisor'), activo=True,
+        ).exists():
             return qs
         # Los autores solo ven sus propias ponencias
         return qs.filter(autor_principal=user)
@@ -152,3 +160,32 @@ class EnviarCambiosView(APIView):
             autor=request.user,
         )
         return Response(PonenciaDetailSerializer(ponencia).data)
+
+
+class MisPostulacionesView(APIView):
+    """
+    GET — devuelve todas las ponencias del usuario autenticado.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = Ponencia.objects.filter(autor_principal=request.user).select_related(
+            'conferencia', 'autor_principal'
+        )
+        data = []
+        for p in qs:
+            data.append({
+                'id': p.id,
+                'titulo': p.titulo,
+                'resumen': p.resumen,
+                'area_tematica': p.area_tematica,
+                'estado': p.estado,
+                'pago_confirmado': p.pago_confirmado,
+                'postulada_en': p.postulada_en,
+                'actualizado_en': p.actualizado_en,
+                'conferencia_nombre': p.conferencia.nombre,
+                'conferencia_slug': p.conferencia.slug,
+                'archivo_url': p.archivo.url if p.archivo else None,
+                'autor_nombre': p.autor_principal.nombre_completo,
+            })
+        return Response(data)

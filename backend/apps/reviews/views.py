@@ -32,7 +32,12 @@ from apps.submissions.models import Ponencia
 # ──────────────────────────────────────────────────────────────
 
 def _es_organizador(user, conferencia):
-    return conferencia.organizador == user
+    if conferencia.organizador == user or user.es_administrador or user.es_organizador:
+        return True
+    from apps.conferences.models import ConferenciaUsuario
+    return ConferenciaUsuario.objects.filter(
+        conferencia=conferencia, usuario=user, rol='organizador', activo=True
+    ).exists()
 
 
 def _es_revisor_de(user, revision):
@@ -66,9 +71,9 @@ class AsignarRevisorView(APIView):
         revisor = get_object_or_404(User, pk=serializer.validated_data["revisor_id"])
 
         try:
-            asignacion = asignar_revisor(ponencia, revisor)
+            asignacion = asignar_revisor(ponencia, revisor, usuario=request.user)
         except ValidationError as e:
-            return Response({"detail": str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {"detail": "Revisor asignado correctamente.", "asignacion_id": asignacion.id},
@@ -96,7 +101,7 @@ class AsignarAutomaticoView(APIView):
         try:
             total = asignar_revisores_automatico(ponencia)
         except ValidationError as e:
-            return Response({"detail": str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             {"detail": f"Se asignaron {total} revisores automáticamente."},
@@ -115,7 +120,7 @@ class MisAsignacionesView(APIView):
     def get(self, request):
         asignaciones = AsignacionRevisor.objects.filter(
             revisor=request.user, activo=True
-        ).select_related("ponencia", "ponencia.conferencia")
+        ).select_related("ponencia", "ponencia__conferencia")
 
         serializer = MiAsignacionSerializer(asignaciones, many=True)
         return Response(serializer.data)
@@ -227,10 +232,9 @@ class VeredictoView(APIView):
 
     def get(self, request, ponencia_id):
         ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
-        veredicto = get_object_or_404(Veredicto, ponencia=ponencia)
 
         es_organizador = _es_organizador(request.user, ponencia.conferencia)
-        es_autor = ponencia.autor == request.user
+        es_autor = ponencia.autor_principal == request.user
 
         if not (es_organizador or es_autor):
             return Response(
@@ -238,9 +242,36 @@ class VeredictoView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # El autor solo recibe la versión anónima (RF-17/18)
-        serializer = VeredictoParaAutorSerializer(veredicto)
-        return Response(serializer.data)
+        # Check if final Veredicto exists
+        try:
+            veredicto = Veredicto.objects.get(ponencia=ponencia)
+            serializer = VeredictoParaAutorSerializer(veredicto)
+            return Response({
+                "veredicto_final": serializer.data,
+                "estado_ponencia": ponencia.estado,
+            })
+        except Veredicto.DoesNotExist:
+            pass
+
+        # No final verdict yet — return partial review feedback
+        asignaciones = AsignacionRevisor.objects.filter(ponencia=ponencia, activo=True)
+        total = asignaciones.count()
+
+        revisiones_completadas = []
+        for asg in asignaciones:
+            if hasattr(asg, "revision") and asg.revision.esta_completa():
+                revisiones_completadas.append({
+                    "veredicto": asg.revision.veredicto,
+                    "comentario_autor": asg.revision.comentario_autor,
+                })
+
+        return Response({
+            "veredicto_final": None,
+            "estado_ponencia": ponencia.estado,
+            "total_revisiones": total,
+            "completadas": len(revisiones_completadas),
+            "revisiones_completadas": revisiones_completadas,
+        })
 
     def post(self, request, ponencia_id):
         """Organizador emite veredicto manual cuando lo requiere (RF-16)."""

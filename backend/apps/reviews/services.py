@@ -1,6 +1,6 @@
 # apps/reviews/services.py
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.utils import timezone
 
 from .models import AsignacionRevisor, Revision, Veredicto
@@ -8,12 +8,12 @@ from apps.submissions.models import Ponencia
 from apps.submissions.services import cambiar_estado
 
 
-def asignar_revisor(ponencia, revisor, es_desempate=False):
+def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
     """
     RF-13: asigna un revisor a una ponencia.
     Valida que no exceda el máximo y que el revisor no sea el autor.
     """
-    if revisor == ponencia.autor:
+    if revisor == ponencia.autor_principal:
         raise ValidationError("El revisor no puede ser el autor de la ponencia.")
 
     max_rev = ponencia.conferencia.max_revisores
@@ -35,11 +35,75 @@ def asignar_revisor(ponencia, revisor, es_desempate=False):
 
     Revision.objects.create(asignacion=asignacion)
 
-    # Notificar al revisor (descomentar cuando notifications esté listo)
-    # from apps.notifications.services import enviar_asignacion_revisor
-    # enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
+    if usuario:
+        try:
+            cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION, usuario)
+        except (ValidationError, PermissionDenied):
+            pass
+
+    try:
+        from apps.notifications.services import enviar_asignacion_revisor
+        enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
+    except Exception:
+        pass
 
     return asignacion
+
+
+def _buscar_revisores_conferencia(conferencia, area_tematica, excluir_usuario):
+    """Busca revisores activos en la conferencia, primero por categoría, luego cualquiera.
+    Incluye tanto revisores globales (User.rol='revisor') como locales (ConferenciaUsuario)."""
+    from apps.accounts.models import User
+    from apps.conferences.models import ConferenciaUsuario
+    from collections import namedtuple
+
+    Revisor = namedtuple("Revisor", ("usuario", "categoria_revisor"))
+
+    ids_excluir = {excluir_usuario.id} if excluir_usuario else set()
+
+    # Revisores globales
+    globales_qs = User.objects.filter(rol="revisor", is_active=True).exclude(
+        id__in=ids_excluir
+    )
+    globales_ids = set(globales_qs.values_list("id", flat=True))
+
+    # Revisores locales (ConferenciaUsuario)
+    locales_qs = ConferenciaUsuario.objects.filter(
+        conferencia=conferencia, rol="revisor", activo=True,
+    ).exclude(usuario__id__in=ids_excluir).select_related("usuario")
+
+    locales_por_id = {}
+    for cu in locales_qs:
+        locales_por_id[cu.usuario_id] = cu
+
+    locales_ids = set(locales_por_id.keys())
+
+    # Combinar: primero intentar por categoría (solo locales tienen categoria_revisor)
+    if area_tematica:
+        por_categoria = [
+            locales_por_id[uid]
+            for uid in locales_ids
+            if area_tematica.lower() in (locales_por_id[uid].categoria_revisor or "").lower()
+        ]
+        if por_categoria:
+            return [Revisor(usuario=cu.usuario, categoria_revisor=cu.categoria_revisor) for cu in por_categoria]
+
+    # Fallback: todos los revisores disponibles
+    todos_ids = globales_ids | locales_ids
+    solo_globales_ids = todos_ids - locales_ids
+    globales_map = {}
+    if solo_globales_ids:
+        for u in User.objects.filter(id__in=solo_globales_ids).only("id", "email", "nombres", "apellidos"):
+            globales_map[u.id] = u
+    todos = []
+    for uid in todos_ids:
+        if uid in locales_por_id:
+            cu = locales_por_id[uid]
+            todos.append(Revisor(usuario=cu.usuario, categoria_revisor=cu.categoria_revisor))
+        elif uid in globales_map:
+            todos.append(Revisor(usuario=globales_map[uid], categoria_revisor=""))
+
+    return todos
 
 
 def asignar_revisores_automatico(ponencia):
@@ -47,24 +111,21 @@ def asignar_revisores_automatico(ponencia):
     RF-13: asignación automática por área temática.
     Busca revisores activos en la conferencia cuya categoría
     coincida con el área temática de la ponencia.
+    Si no hay por categoría, asigna cualquier revisor disponible.
     """
-    from apps.conferences.models import ConferenciaUsuario
-
     min_rev = ponencia.conferencia.min_revisores
-
-    revisores_disponibles = (
-        ConferenciaUsuario.objects.filter(
-            conferencia=ponencia.conferencia,
-            rol="revisor",
-            activo=True,
-            categoria_revisor__icontains=ponencia.area_tematica,
-        )
-        .exclude(usuario=ponencia.autor)
-        .select_related("usuario")
+    revisores = _buscar_revisores_conferencia(
+        ponencia.conferencia, ponencia.area_tematica, ponencia.autor_principal
     )
 
+    if len(revisores) < min_rev:
+        raise ValidationError(
+            f"No hay suficientes revisores disponibles en la conferencia. "
+            f"Se necesitan {min_rev}, hay {len(revisores)}."
+        )
+
     asignados = 0
-    for cu in revisores_disponibles[:min_rev]:
+    for cu in revisores[:min_rev]:
         try:
             asignar_revisor(ponencia, cu.usuario)
             asignados += 1
@@ -73,10 +134,14 @@ def asignar_revisores_automatico(ponencia):
 
     if asignados < min_rev:
         raise ValidationError(
-            f"No hay suficientes revisores disponibles para el área '{ponencia.area_tematica}'."
+            f"No se pudieron asignar {min_rev} revisores. "
+            f"Solo se asignaron {asignados}."
         )
 
-    cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION, actor=None)
+    try:
+        cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION, usuario=ponencia.conferencia.organizador)
+    except (ValidationError, PermissionDenied):
+        pass
     return asignados
 
 
@@ -139,7 +204,7 @@ def _asignar_revisor_desempate(ponencia):
             activo=True,
         )
         .exclude(usuario_id__in=ya_asignados)
-        .exclude(usuario=ponencia.autor)
+        .exclude(usuario=ponencia.autor_principal)
         .first()
     )
 
@@ -174,11 +239,11 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
     cambiar_estado(
         ponencia,
         mapa_estado[resultado],
-        actor=ponencia.conferencia.organizador,
+        usuario=ponencia.conferencia.organizador,
     )
 
     # Reembolso automático si es rechazada (RF-09)
-    if veredicto.es_rechazado() and getattr(ponencia, "pago_completado", False):
+    if veredicto.es_rechazado() and ponencia.pago_confirmado:
         _reembolsar_ponencia(ponencia)
 
     # Notificar al autor (descomentar cuando notifications esté listo)

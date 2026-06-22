@@ -1,0 +1,5 @@
+Hola,
+Has sido invitado como revisor para la conferencia {{ nombre_conferencia }}.
+{% if frontend_url %}Aceptar invitacion: {{ frontend_url }}/invitacion/{{ invitacion.token }}{% endif %}
+Saludos,
+Equipo SmartChair

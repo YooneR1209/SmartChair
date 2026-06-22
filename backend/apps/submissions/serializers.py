@@ -41,15 +41,6 @@ class PonenciaDetailSerializer(serializers.ModelSerializer):
     def _get_conferencia(self):
         return self.context.get('conferencia')
 
-    def validate_area_tematica(self, value):
-        conferencia = self._get_conferencia()
-        if conferencia and conferencia.areas_tematicas and value not in conferencia.areas_tematicas:
-            raise serializers.ValidationError(
-                f'El área "{value}" no está disponible. '
-                f'Áreas válidas: {", ".join(conferencia.areas_tematicas)}.'
-            )
-        return value
-
     def validate_archivo(self, value):
         conferencia = self._get_conferencia()
         if conferencia and conferencia.formatos_archivo_permitidos:
@@ -71,20 +62,6 @@ class PonenciaDetailSerializer(serializers.ModelSerializer):
                     f'(autor principal + {conferencia.max_autores - 1} coautores).'
                 )
         return value
-
-    def validate(self, attrs):
-        # Solo aplica al crear (no al editar una ponencia existente)
-        if self.instance is not None:
-            return attrs
-        conferencia = self._get_conferencia()
-        autor = self.context['request'].user
-        if conferencia and Ponencia.objects.filter(
-            autor_principal=autor, conferencia=conferencia
-        ).exists():
-            raise serializers.ValidationError(
-                'Ya tienes una ponencia postulada en esta conferencia.'
-            )
-        return attrs
 
 
 class CambiarEstadoSerializer(serializers.Serializer):

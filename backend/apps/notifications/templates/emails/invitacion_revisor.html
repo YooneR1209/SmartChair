@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block title %}Invitacion como revisor{% endblock %}
+{% block content %}
+  <p>Hola,</p>
+  <p>Has sido invitado como revisor para la conferencia <strong>{{ nombre_conferencia }}</strong>.</p>
+  {% if frontend_url %}
+    <a class="btn" href="{{ frontend_url }}/invitacion/{{ invitacion.token }}">Aceptar invitacion</a>
+  {% endif %}
+{% endblock %}

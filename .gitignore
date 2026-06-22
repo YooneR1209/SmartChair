@@ -32,4 +32,6 @@ pnpm-debug.log*
 .idea/
 .vscode/
 *.swp
-.claude/
+
+# Railway
+backend/staticfiles/

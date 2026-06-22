@@ -7,3 +7,5 @@ djangorestframework-simplejwt
 stripe
 Pillow
 django-filter
+gunicorn
+whitenoise

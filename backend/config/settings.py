@@ -94,6 +94,7 @@ DB_HOST = (
     or os.getenv('MYSQLHOST')
     or os.getenv('MYSQL_HOST')
     or os.getenv('MYSQL_ADDON_HOST')
+    or os.getenv('MARIADB_PUBLIC_HOST')
     or os.getenv('DB_HOST')
 )
 DB_PORT = (
@@ -101,6 +102,7 @@ DB_PORT = (
     or os.getenv('MYSQLPORT')
     or os.getenv('MYSQL_PORT')
     or os.getenv('MYSQL_ADDON_PORT')
+    or os.getenv('MARIADB_PUBLIC_PORT')
     or os.getenv('DB_PORT')
 )
 DB_NAME = (

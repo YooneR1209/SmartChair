@@ -3,6 +3,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
 
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent / '.env')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -120,7 +126,7 @@ DB_PASS = (
     or os.getenv('MYSQL_ADDON_PASSWORD')
     or os.getenv('DB_PASSWORD')
 )
-DB_URL = os.getenv('DATABASE_URL') or os.getenv('MARIADB_URL') or os.getenv('MYSQL_URL')
+DB_URL = os.getenv('DATABASE_URL') or os.getenv('MARIADB_URL') or os.getenv('MARIADB_PRIVATE_URL') or os.getenv('MYSQL_URL')
 
 if DB_URL:
     import re

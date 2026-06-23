@@ -2,6 +2,7 @@ django==5.2
 djangorestframework
 django-cors-headers
 mysqlclient
+pymysql
 python-dotenv
 djangorestframework-simplejwt
 stripe

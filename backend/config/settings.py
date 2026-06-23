@@ -131,14 +131,14 @@ DB_PASS = (
 DB_URL = os.getenv('DATABASE_URL') or os.getenv('MARIADB_URL') or os.getenv('MARIADB_PRIVATE_URL') or os.getenv('MYSQL_URL')
 
 if DB_URL:
-    import re
-    match = re.match(r'(?:mysql|mariadb)://(.+):(.+)@(.+):(\d+)/(.+)', DB_URL)
-    if match:
-        DB_NAME = match.group(5)
-        DB_USER = match.group(1)
-        DB_PASS = match.group(2)
-        DB_HOST = match.group(3)
-        DB_PORT = match.group(4)
+    from urllib.parse import urlparse, unquote
+    parsed = urlparse(DB_URL)
+    if parsed.scheme in ('mysql', 'mariadb') and parsed.hostname and parsed.port:
+        DB_NAME = parsed.path.lstrip('/').split('?')[0]
+        DB_USER = unquote(parsed.username or '')
+        DB_PASS = unquote(parsed.password or '')
+        DB_HOST = parsed.hostname
+        DB_PORT = str(parsed.port)
 
 import sys
 print(f"[DEBUG] DB config -> HOST={DB_HOST!r} PORT={DB_PORT!r} NAME={DB_NAME!r} USER={DB_USER!r} PASS={'***' if DB_PASS else '(empty)'} URL={DB_URL!r}", file=sys.stderr)
@@ -196,7 +196,7 @@ SIMPLE_JWT = {
 }
 
 # ✅ CORS
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174').split(',')
+CORS_ALLOWED_ORIGINS = [url.rstrip('/') for url in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174').split(',')]
 CORS_ALLOW_CREDENTIALS = True
 
 LANGUAGE_CODE = 'es-ec'

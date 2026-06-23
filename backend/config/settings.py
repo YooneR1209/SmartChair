@@ -82,42 +82,64 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Railway MariaDB env vars (without underscores)
-MYSQLHOST = os.getenv('MYSQLHOST')
-MYSQLPORT = os.getenv('MYSQLPORT')
-MYSQLDATABASE = os.getenv('MYSQLDATABASE')
-MYSQLUSER = os.getenv('MYSQLUSER')
-MYSQLPASSWORD = os.getenv('MYSQLPASSWORD')
+# Railway MariaDB env vars (any naming convention)
+DB_HOST = (
+    os.getenv('MARIADB_HOST')
+    or os.getenv('MYSQLHOST')
+    or os.getenv('MYSQL_HOST')
+    or os.getenv('DB_HOST')
+)
+DB_PORT = (
+    os.getenv('MARIADB_PORT')
+    or os.getenv('MYSQLPORT')
+    or os.getenv('MYSQL_PORT')
+    or os.getenv('DB_PORT')
+)
+DB_NAME = (
+    os.getenv('MARIADB_DATABASE')
+    or os.getenv('MARIADB_DB')
+    or os.getenv('MYSQLDATABASE')
+    or os.getenv('MYSQL_DATABASE')
+    or os.getenv('DB_NAME')
+)
+DB_USER = (
+    os.getenv('MARIADB_USER')
+    or os.getenv('MYSQLUSER')
+    or os.getenv('MYSQL_USER')
+    or os.getenv('DB_USER')
+)
+DB_PASS = (
+    os.getenv('MARIADB_PASSWORD')
+    or os.getenv('MARIADB_PWD')
+    or os.getenv('MYSQLPASSWORD')
+    or os.getenv('MYSQL_PASSWORD')
+    or os.getenv('DB_PASSWORD')
+)
+DB_URL = os.getenv('MARIADB_URL') or os.getenv('MYSQL_URL')
+
+if DB_URL:
+    import re
+    match = re.match(r'mysql://(.+):(.+)@(.+):(\d+)/(.+)', DB_URL)
+    if match:
+        DB_NAME = match.group(5)
+        DB_USER = match.group(1)
+        DB_PASS = match.group(2)
+        DB_HOST = match.group(3)
+        DB_PORT = match.group(4)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': MYSQLDATABASE or os.getenv('MYSQL_DATABASE') or os.getenv('DB_NAME', 'smartchair_db'),
-        'USER': MYSQLUSER or os.getenv('MYSQL_USER') or os.getenv('DB_USER', 'root'),
-        'PASSWORD': MYSQLPASSWORD or os.getenv('MYSQL_PASSWORD') or os.getenv('DB_PASSWORD', ''),
-        'HOST': MYSQLHOST or os.getenv('MYSQL_HOST') or os.getenv('DB_HOST', 'localhost'),
-        'PORT': MYSQLPORT or os.getenv('MYSQL_PORT') or os.getenv('DB_PORT', '3306'),
+        'NAME': DB_NAME or 'smartchair_db',
+        'USER': DB_USER or 'root',
+        'PASSWORD': DB_PASS or '',
+        'HOST': DB_HOST or 'localhost',
+        'PORT': DB_PORT or '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
     }
 }
-
-# Railway MySQL/MariaDB URL fallback
-MYSQL_URL = os.getenv('MYSQL_URL') or os.getenv('MARIADB_URL')
-if MYSQL_URL:
-    import re
-    match = re.match(r'mysql://(.+):(.+)@(.+):(\d+)/(.+)', MYSQL_URL)
-    if match:
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': match.group(5),
-            'USER': match.group(1),
-            'PASSWORD': match.group(2),
-            'HOST': match.group(3),
-            'PORT': match.group(4),
-            'OPTIONS': {'charset': 'utf8mb4'},
-        }
 
 AUTH_USER_MODEL = 'accounts.User'
 

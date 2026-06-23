@@ -3,14 +3,24 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
+from django.db import connections
+from django.db.utils import OperationalError
 from apps.submissions.views import MisPostulacionesView
 from apps.submissions.certificate_views import CertificadoListView, CertificadoDescargarView
 
 def health_check(request):
     return JsonResponse({"status": "ok"})
 
+def db_check(request):
+    try:
+        connections['default'].cursor()
+        return JsonResponse({"status": "ok", "db": "connected"})
+    except OperationalError as e:
+        return JsonResponse({"status": "error", "db": str(e)})
+
 urlpatterns = [
     path('api/health/', health_check, name='health-check'),
+    path('api/health/db/', db_check, name='db-check'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/conferencias/', include('apps.conferences.urls')),

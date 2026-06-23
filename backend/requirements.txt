@@ -9,3 +9,4 @@ Pillow
 django-filter
 gunicorn
 whitenoise
+reportlab

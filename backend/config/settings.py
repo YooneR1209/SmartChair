@@ -160,7 +160,9 @@ DATABASES = {
 }
 
 if DB_SSL:
-    DATABASES['default']['OPTIONS']['ssl'] = {'ca': '/etc/ssl/certs/ca-certificates.crt'}
+    # For Railway internal connections, disable SSL verification
+    # Railway's internal network uses self-signed certificates
+    DATABASES['default']['OPTIONS']['ssl'] = {'check_hostname': False, 'verify_cert': False}
 
 AUTH_USER_MODEL = 'accounts.User'
 

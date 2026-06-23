@@ -1,8 +1,9 @@
 [phases.setup]
-nixPkgs = ["python311", "zlib", "cacert"]
+nixPkgs = ["python311", "zlib"]
 
 [phases.install]
 cmds = [
   "apt-get update -qq && apt-get install -y -qq default-libmysqlclient-dev pkg-config build-essential",
-  "pip install -r requirements.txt"
+  "pip install -r requirements.txt",
+  "python manage.py collectstatic --noinput --clear"
 ]

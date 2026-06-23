@@ -127,6 +127,9 @@ if DB_URL:
         DB_HOST = match.group(3)
         DB_PORT = match.group(4)
 
+import sys
+print(f"[DEBUG] DB config -> HOST={DB_HOST!r} PORT={DB_PORT!r} NAME={DB_NAME!r} USER={DB_USER!r} PASS={'***' if DB_PASS else '(empty)'} URL={DB_URL!r}", file=sys.stderr)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',

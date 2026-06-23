@@ -18,4 +18,5 @@ RUN python3 manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD python3 manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --log-level info --timeout 120
+RUN chmod +x start.sh
+CMD ["bash", "start.sh"]

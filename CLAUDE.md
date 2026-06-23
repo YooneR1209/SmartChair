@@ -41,4 +41,3 @@ shell commands, and other important information, read the current plan
 - MariaDB Host: reseau.proxy.rlwy.net:13834 (público)
 - MariaDB DB: railway
 - MariaDB User: railway
-- MariaDB Password (público): ~uDkrSjkpV6U7EU58lF9.6ZgCD824ZF4

@@ -135,6 +135,8 @@ if DB_URL:
 import sys
 print(f"[DEBUG] DB config -> HOST={DB_HOST!r} PORT={DB_PORT!r} NAME={DB_NAME!r} USER={DB_USER!r} PASS={'***' if DB_PASS else '(empty)'} URL={DB_URL!r}", file=sys.stderr)
 
+DB_SSL = DB_HOST not in ('localhost', '127.0.0.1', '')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -145,10 +147,12 @@ DATABASES = {
         'PORT': DB_PORT or '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
-            'ssl': {'ca': '/etc/ssl/certs/ca-certificates.crt'} if DB_HOST not in ('localhost', '127.0.0.1') else {},
         },
     }
 }
+
+if DB_SSL:
+    DATABASES['default']['OPTIONS']['ssl'] = {'ca': '/etc/ssl/certs/ca-certificates.crt'}
 
 AUTH_USER_MODEL = 'accounts.User'
 

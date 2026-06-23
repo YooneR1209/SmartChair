@@ -87,12 +87,14 @@ DB_HOST = (
     os.getenv('MARIADB_HOST')
     or os.getenv('MYSQLHOST')
     or os.getenv('MYSQL_HOST')
+    or os.getenv('MYSQL_ADDON_HOST')
     or os.getenv('DB_HOST')
 )
 DB_PORT = (
     os.getenv('MARIADB_PORT')
     or os.getenv('MYSQLPORT')
     or os.getenv('MYSQL_PORT')
+    or os.getenv('MYSQL_ADDON_PORT')
     or os.getenv('DB_PORT')
 )
 DB_NAME = (
@@ -100,12 +102,14 @@ DB_NAME = (
     or os.getenv('MARIADB_DB')
     or os.getenv('MYSQLDATABASE')
     or os.getenv('MYSQL_DATABASE')
+    or os.getenv('MYSQL_ADDON_DB')
     or os.getenv('DB_NAME')
 )
 DB_USER = (
     os.getenv('MARIADB_USER')
     or os.getenv('MYSQLUSER')
     or os.getenv('MYSQL_USER')
+    or os.getenv('MYSQL_ADDON_USER')
     or os.getenv('DB_USER')
 )
 DB_PASS = (
@@ -113,13 +117,14 @@ DB_PASS = (
     or os.getenv('MARIADB_PWD')
     or os.getenv('MYSQLPASSWORD')
     or os.getenv('MYSQL_PASSWORD')
+    or os.getenv('MYSQL_ADDON_PASSWORD')
     or os.getenv('DB_PASSWORD')
 )
-DB_URL = os.getenv('MARIADB_URL') or os.getenv('MYSQL_URL')
+DB_URL = os.getenv('DATABASE_URL') or os.getenv('MARIADB_URL') or os.getenv('MYSQL_URL')
 
 if DB_URL:
     import re
-    match = re.match(r'mysql://(.+):(.+)@(.+):(\d+)/(.+)', DB_URL)
+    match = re.match(r'(?:mysql|mariadb)://(.+):(.+)@(.+):(\d+)/(.+)', DB_URL)
     if match:
         DB_NAME = match.group(5)
         DB_USER = match.group(1)
@@ -140,6 +145,7 @@ DATABASES = {
         'PORT': DB_PORT or '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
+            'ssl': {'ca': '/etc/ssl/certs/ca-certificates.crt'} if DB_HOST not in ('localhost', '127.0.0.1') else {},
         },
     }
 }

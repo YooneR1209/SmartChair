@@ -32,6 +32,8 @@ from apps.submissions.models import Ponencia
 # ──────────────────────────────────────────────────────────────
 
 def _es_organizador(user, conferencia):
+    if not conferencia:
+        return user.es_administrador or user.es_organizador
     if conferencia.organizador == user or user.es_administrador or user.es_organizador:
         return True
     from apps.conferences.models import ConferenciaUsuario

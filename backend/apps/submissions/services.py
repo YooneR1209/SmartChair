@@ -87,7 +87,7 @@ def confirmar_pago(ponencia, referencia):
     Solo aplica a conferencias de pago. La referencia es el ID de la
     transacción (Stripe o manual).
     """
-    if not ponencia.conferencia.es_de_pago:
+    if not ponencia.conferencia or not ponencia.conferencia.es_de_pago:
         raise ValidationError('Esta conferencia no requiere pago de inscripción.')
 
     if ponencia.pago_confirmado:
@@ -107,7 +107,7 @@ def cambiar_estado(ponencia, nuevo_estado, usuario):
     """
     user_es_admin = getattr(usuario, 'rol', '') == 'administrador'
     user_es_organizador = getattr(usuario, 'rol', '') == 'organizador'
-    es_organizador_conf = ponencia.conferencia.organizador == usuario
+    es_organizador_conf = ponencia.conferencia and ponencia.conferencia.organizador == usuario
 
     if not (user_es_admin or user_es_organizador or es_organizador_conf):
         raise PermissionDenied('Solo el organizador o un administrador puede cambiar el estado.')
@@ -141,20 +141,20 @@ def enviar_cambios(ponencia, archivo, autor):
             {'estado': 'Solo se pueden enviar cambios cuando el estado es "aceptada_con_cambios".'}
         )
 
-    fecha_limite = ponencia.conferencia.fecha_limite_cambios
-    if fecha_limite and timezone.now().date() > fecha_limite:
-        raise ValidationError(
-            {'archivo': f'El plazo para enviar cambios venció el {fecha_limite}.'}
-        )
-
-    conferencia = ponencia.conferencia
-    if archivo and conferencia.formatos_archivo_permitidos:
-        ext = archivo.name.rsplit('.', 1)[-1].lower()
-        if ext not in conferencia.formatos_archivo_permitidos:
+    if ponencia.conferencia:
+        fecha_limite = ponencia.conferencia.fecha_limite_cambios
+        if fecha_limite and timezone.now().date() > fecha_limite:
             raise ValidationError(
-                {'archivo': f'Formato .{ext} no permitido. '
-                            f'Formatos aceptados: {", ".join(conferencia.formatos_archivo_permitidos)}.'}
+                {'archivo': f'El plazo para enviar cambios venció el {fecha_limite}.'}
             )
+
+        if archivo and ponencia.conferencia.formatos_archivo_permitidos:
+            ext = archivo.name.rsplit('.', 1)[-1].lower()
+            if ext not in ponencia.conferencia.formatos_archivo_permitidos:
+                raise ValidationError(
+                    {'archivo': f'Formato .{ext} no permitido. '
+                                f'Formatos aceptados: {", ".join(ponencia.conferencia.formatos_archivo_permitidos)}.'}
+                )
 
     ponencia.archivo_revisado    = archivo
     ponencia.estado              = Ponencia.Estado.CAMBIOS_ENVIADOS

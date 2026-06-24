@@ -18,6 +18,8 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 if os.getenv('RAILWAY_PUBLIC_DOMAIN'):
     ALLOWED_HOSTS.append(os.getenv('RAILWAY_PUBLIC_DOMAIN'))
+ALLOWED_HOSTS.append('healthcheck.railway.app')
+ALLOWED_HOSTS.append('.up.railway.app')
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')
 
 DJANGO_APPS = [
@@ -162,7 +164,9 @@ DATABASES = {
 }
 
 if DB_SSL:
-    DATABASES['default']['OPTIONS']['ssl'] = {'ca': '/etc/ssl/certs/ca-certificates.crt'}
+    # For Railway internal connections, disable SSL verification
+    # Railway's internal network uses self-signed certificates
+    DATABASES['default']['OPTIONS']['ssl'] = {'check_hostname': False, 'verify_cert': False}
 
 AUTH_USER_MODEL = 'accounts.User'
 

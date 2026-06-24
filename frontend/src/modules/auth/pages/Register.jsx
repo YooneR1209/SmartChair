@@ -70,12 +70,12 @@ function Register() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', borderLeft: '3px solid #D4AC0D', paddingLeft: '16px' }}>
             {[
-              { icon: '📋', text: 'Postula tus investigaciones' },
-              { icon: '👥', text: 'Participa como revisor' },
-              { icon: '📊', text: 'Da seguimiento a tus envíos' },
+              { icon: 'description', text: 'Postula tus investigaciones' },
+              { icon: 'groups', text: 'Participa como revisor' },
+              { icon: 'track_changes', text: 'Da seguimiento a tus envíos' },
             ].map((item) => (
               <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.85)', fontSize: '0.92rem' }}>
-                <span>{item.icon}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>{item.icon}</span>
                 <span>{item.text}</span>
               </div>
             ))}
@@ -85,78 +85,129 @@ function Register() {
 
       <section className="auth-right" style={{
         background: '#FDFAF2', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', padding: '48px 32px',
+        height: '100vh', padding: '48px 32px',
       }}>
-        <div style={{ width: '100%', maxWidth: '420px' }}>
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2C3E50', marginBottom: '8px' }}>Crear Cuenta</h2>
-            <p style={{ color: '#5D6D7E', fontSize: '0.92rem' }}>Completa el formulario para registrarte en la plataforma.</p>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            width: '100%', maxWidth: '420px', background: '#fff',
+            border: '1px solid #E8EAED', borderRadius: '12px',
+            padding: '36px 32px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          }}>
+            <div style={{ marginBottom: '28px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2C3E50', marginBottom: '8px' }}>Crear Cuenta</h2>
+              <p style={{ color: '#5D6D7E', fontSize: '0.92rem' }}>Completa el formulario para registrarte en la plataforma.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Correo Electrónico</label>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                  background: '#fff', padding: '0 12px',
+                  transition: 'border-color 160ms, box-shadow 160ms',
+                }}
+                  onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                  onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>mail</span>
+                  <input type="email" value={form.email} onChange={handleChange('email')} placeholder="correo@universidad.edu"
+                    style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Nombres</label>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                    background: '#fff', padding: '0 12px',
+                    transition: 'border-color 160ms, box-shadow 160ms',
+                  }}
+                    onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                    onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>person</span>
+                    <input type="text" value={form.nombres} onChange={handleChange('nombres')} placeholder="Juan"
+                      style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Apellidos</label>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                    background: '#fff', padding: '0 12px',
+                    transition: 'border-color 160ms, box-shadow 160ms',
+                  }}
+                    onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                    onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>badge</span>
+                    <input type="text" value={form.apellidos} onChange={handleChange('apellidos')} placeholder="Pérez"
+                      style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Contraseña</label>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                  background: '#fff', padding: '0 12px',
+                  transition: 'border-color 160ms, box-shadow 160ms',
+                }}
+                  onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                  onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
+                  <input type="password" value={form.password} onChange={handleChange('password')} placeholder="Mínimo 8 caracteres"
+                    style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Confirmar Contraseña</label>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                  background: '#fff', padding: '0 12px',
+                  transition: 'border-color 160ms, box-shadow 160ms',
+                }}
+                  onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                  onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
+                  <input type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} placeholder="Repite la contraseña"
+                    style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} style={{
+                width: '100%', height: '52px', border: 'none', borderRadius: '8px',
+                background: '#1A1A2E', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
+                cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1,
+                transition: 'opacity 160ms',
+              }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.opacity = '0.85'; }}
+                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.opacity = '1'; }}
+              >
+                {loading ? 'Registrando...' : 'Crear Cuenta'}
+              </button>
+            </form>
+
+            <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: '#5D6D7E' }}>
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" style={{ color: '#9A6F00', fontWeight: 700 }}>Iniciar Sesión</Link>
+            </p>
           </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Correo Electrónico</label>
-              <input type="email" value={form.email} onChange={handleChange('email')} placeholder="correo@universidad.edu"
-                style={{ width: '100%', height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px', padding: '0 12px', fontSize: '0.92rem', outline: 'none', background: '#fff', transition: 'border-color 160ms' }}
-                onFocus={(e) => { e.target.style.borderColor = '#D4AC0D'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#D0D0D0'; }}
-              />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Nombres</label>
-                <input type="text" value={form.nombres} onChange={handleChange('nombres')} placeholder="Juan"
-                  style={{ width: '100%', height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px', padding: '0 12px', fontSize: '0.92rem', outline: 'none', background: '#fff', transition: 'border-color 160ms' }}
-                  onFocus={(e) => { e.target.style.borderColor = '#D4AC0D'; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#D0D0D0'; }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Apellidos</label>
-                <input type="text" value={form.apellidos} onChange={handleChange('apellidos')} placeholder="Pérez"
-                  style={{ width: '100%', height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px', padding: '0 12px', fontSize: '0.92rem', outline: 'none', background: '#fff', transition: 'border-color 160ms' }}
-                  onFocus={(e) => { e.target.style.borderColor = '#D4AC0D'; }}
-                  onBlur={(e) => { e.target.style.borderColor = '#D0D0D0'; }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Contraseña</label>
-              <input type="password" value={form.password} onChange={handleChange('password')} placeholder="Mínimo 8 caracteres"
-                style={{ width: '100%', height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px', padding: '0 12px', fontSize: '0.92rem', outline: 'none', background: '#fff', transition: 'border-color 160ms' }}
-                onFocus={(e) => { e.target.style.borderColor = '#D4AC0D'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#D0D0D0'; }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>Confirmar Contraseña</label>
-              <input type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} placeholder="Repite la contraseña"
-                style={{ width: '100%', height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px', padding: '0 12px', fontSize: '0.92rem', outline: 'none', background: '#fff', transition: 'border-color 160ms' }}
-                onFocus={(e) => { e.target.style.borderColor = '#D4AC0D'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#D0D0D0'; }}
-              />
-            </div>
-
-            <button type="submit" disabled={loading} style={{
-              width: '100%', height: '52px', border: 'none', borderRadius: '8px',
-              background: '#1A1A2E', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
-              cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1,
-              transition: 'opacity 160ms',
-            }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.opacity = '0.85'; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.opacity = '1'; }}
-            >
-              {loading ? 'Registrando...' : 'Crear Cuenta'}
-            </button>
-          </form>
-
-          <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: '#5D6D7E' }}>
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" style={{ color: '#9A6F00', fontWeight: 700 }}>Iniciar Sesión</Link>
-          </p>
         </div>
 
-        <p style={{ marginTop: 'auto', paddingTop: '24px', color: '#9CA3AF', fontSize: '0.75rem', textAlign: 'center' }}>
+        <p style={{ color: '#9CA3AF', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>
           © 2026 SmartChair - Academic Conference Management System
         </p>
       </section>

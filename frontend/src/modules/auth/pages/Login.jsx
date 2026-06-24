@@ -53,12 +53,12 @@ function Login() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', borderLeft: '3px solid #D4AC0D', paddingLeft: '16px' }}>
             {[
-              { icon: '📋', text: 'Flujos de revisión por pares' },
-              { icon: '💳', text: 'Pagos seguros integrados' },
-              { icon: '🎓', text: 'Certificación automática' },
+              { icon: 'description', text: 'Flujos de revisión por pares' },
+              { icon: 'payments', text: 'Pagos seguros integrados' },
+              { icon: 'verified', text: 'Certificación automática' },
             ].map((item) => (
               <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.85)', fontSize: '0.92rem' }}>
-                <span>{item.icon}</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>{item.icon}</span>
                 <span>{item.text}</span>
               </div>
             ))}
@@ -68,84 +68,86 @@ function Login() {
 
       <section className="auth-right" style={{
         background: '#FDFAF2', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', padding: '48px 32px',
+        height: '100vh', padding: '48px 32px',
       }}>
-        <div style={{ width: '100%', maxWidth: '420px' }}>
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2C3E50', marginBottom: '8px' }}>Iniciar Sesión</h2>
-            <p style={{ color: '#5D6D7E', fontSize: '0.92rem' }}>Accede a tu panel para gestionar postulaciones y revisiones.</p>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{
+            width: '100%', maxWidth: '420px', background: '#fff',
+            border: '1px solid #E8EAED', borderRadius: '12px',
+            padding: '36px 32px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          }}>
+            <div style={{ marginBottom: '28px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2C3E50', marginBottom: '8px' }}>Iniciar Sesión</h2>
+              <p style={{ color: '#5D6D7E', fontSize: '0.92rem' }}>Accede a tu panel para gestionar postulaciones y revisiones.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>
+                  Correo Electrónico
+                </label>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                  background: '#fff', padding: '0 12px',
+                  transition: 'border-color 160ms, box-shadow 160ms',
+                }}
+                  onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                  onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>mail</span>
+                  <input
+                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    placeholder="correo@universidad.edu"
+                    style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50' }}>Contraseña</label>
+                  <a href="#" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9A6F00' }}>¿Olvidaste tu contraseña?</a>
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
+                  background: '#fff', padding: '0 12px',
+                  transition: 'border-color 160ms, box-shadow 160ms',
+                }}
+                  onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
+                  onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
+                  <input
+                    type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                    placeholder="********"
+                    style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} style={{
+                width: '100%', height: '52px', border: 'none', borderRadius: '8px',
+                background: '#1A1A2E', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
+                cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1,
+                transition: 'opacity 160ms',
+              }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.opacity = '0.85'; }}
+                onMouseLeave={(e) => { if (!loading) e.currentTarget.style.opacity = '1'; }}
+              >
+                {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+              </button>
+            </form>
+
+            <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: '#5D6D7E' }}>
+              ¿No tienes cuenta?{' '}
+              <Link to="/registro" style={{ color: '#9A6F00', fontWeight: 700 }}>Registrarse</Link>
+            </p>
           </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>
-                Correo Electrónico
-              </label>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
-                background: '#fff', padding: '0 12px',
-                transition: 'border-color 160ms, box-shadow 160ms',
-              }}
-                onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
-                onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="#D4AC0D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', flexShrink: 0 }}>
-                  <path d="M4 6h16v12H4z" /><path d="m4 7 8 6 8-6" />
-                </svg>
-                <input
-                  type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@universidad.edu"
-                  style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50' }}>Contraseña</label>
-                <a href="#" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9A6F00' }}>¿Olvidaste tu contraseña?</a>
-              </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                height: '48px', border: '1px solid #D0D0D0', borderRadius: '8px',
-                background: '#fff', padding: '0 12px',
-                transition: 'border-color 160ms, box-shadow 160ms',
-              }}
-                onFocusCapture={(e) => { e.currentTarget.style.borderColor = '#D4AC0D'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)'; }}
-                onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="#D4AC0D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', flexShrink: 0 }}>
-                  <rect x="5" y="11" width="14" height="8" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
-                </svg>
-                <input
-                  type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="********"
-                  style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
-                />
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading} style={{
-              width: '100%', height: '52px', border: 'none', borderRadius: '8px',
-              background: '#1A1A2E', color: '#fff', fontSize: '0.95rem', fontWeight: 700,
-              cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.6 : 1,
-              transition: 'opacity 160ms',
-            }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.opacity = '0.85'; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.opacity = '1'; }}
-            >
-              {loading ? 'Ingresando...' : 'Iniciar Sesión'}
-            </button>
-          </form>
-
-          <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: '#5D6D7E' }}>
-            ¿No tienes cuenta?{' '}
-            <Link to="/registro" style={{ color: '#9A6F00', fontWeight: 700 }}>Registrarse</Link>
-          </p>
         </div>
 
-        <p style={{ marginTop: 'auto', paddingTop: '24px', color: '#9CA3AF', fontSize: '0.75rem', textAlign: 'center' }}>
+        <p style={{ color: '#9CA3AF', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>
           © 2026 SmartChair - Academic Conference Management System
         </p>
       </section>

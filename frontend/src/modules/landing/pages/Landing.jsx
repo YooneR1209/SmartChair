@@ -470,21 +470,15 @@ export default function Landing() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', lineHeight: '20px' }}>
               <li>Universidad Nacional de Loja</li>
               <li>Desarrollo Basado en Plataformas</li>
-              <li>Ciclo 5A — 2024</li>
+              <li>Ciclo 5A — 2026</li>
               <li>Loja, Ecuador</li>
             </ul>
           </div>
           <div>
-            <h4 style={{ fontSize: '20px', lineHeight: '28px', color: '#ffffff', marginBottom: '16px', fontWeight: 600 }}>Soporte</h4>
+            <h4 style={{ fontSize: '20px', lineHeight: '28px', color: '#ffffff', marginBottom: '16px', fontWeight: 600 }}>Desarrolladores</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', lineHeight: '20px' }}>
-              {['Documentación', 'Centro de Ayuda', 'Términos de Servicio', 'Privacidad'].map((item) => (
-                <li key={item}>
-                  <a href="#" style={{ color: 'inherit', textDecoration: 'none', transition: 'color 0.15s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = '#D4AC0D'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'inherit'; }}>
-                    {item}
-                  </a>
-                </li>
+              {['Wagner Balcazar', 'Juan Veintimilla', 'Ariana Cordova', 'Ariel Tandazo', 'Marco Castillo'].map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
@@ -495,7 +489,7 @@ export default function Landing() {
           textAlign: 'center',
         }}>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', lineHeight: '20px' }}>
-            &copy; 2024 SmartChair &mdash; Universidad Nacional de Loja. Todos los derechos reservados.
+            &copy; 2026 SmartChair &mdash; Universidad Nacional de Loja. Todos los derechos reservados.
           </p>
         </div>
       </footer>

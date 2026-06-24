@@ -70,10 +70,6 @@ class RegistroView(generics.CreateAPIView):
                 "pendiente_verificacion": True,
                 "email": user.email,
             }
-            if settings.DEBUG:
-                v = VerificacionEmail.objects.filter(usuario=user).first()
-                if v:
-                    resp["codigo_debug"] = v.codigo
             return Response(resp, status=status.HTTP_201_CREATED)
 
         headers = self.get_success_headers(serializer.data)
@@ -107,12 +103,7 @@ class ReenviarVerificacionView(APIView):
 
         enviar_correo_verificacion(user)
 
-        resp = {"detail": "Enlace de verificación reenviado. Revisa tu correo."}
-        if settings.DEBUG:
-            v = VerificacionEmail.objects.filter(usuario=user).first()
-            if v:
-                resp["codigo_debug"] = v.codigo
-        return Response(resp)
+        return Response({"detail": "Enlace de verificación reenviado. Revisa tu correo."})
 
 
 class VerificarEmailView(APIView):

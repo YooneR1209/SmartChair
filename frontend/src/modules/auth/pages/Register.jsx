@@ -13,7 +13,7 @@ function Register() {
   const [registroExitoso, setRegistroExitoso] = useState(false);
   const [codigo, setCodigo] = useState('');
   const [verificando, setVerificando] = useState(false);
-  const [codigoDebug, setCodigoDebug] = useState(null);
+
 
   const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
@@ -47,7 +47,6 @@ function Register() {
       });
       if (data.pendiente_verificacion) {
         addToast('Revisa tu correo y escribe el código de verificación.', 'success');
-        setCodigoDebug(data.codigo_debug || null);
         setRegistroExitoso(true);
       } else {
         addToast('Registro exitoso. Ahora puedes iniciar sesión.', 'success');
@@ -106,13 +105,6 @@ function Register() {
         <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginBottom: '24px' }}>
           Si no lo ves, revisa tu carpeta de spam.
         </p>
-
-        {codigoDebug && (
-          <div style={{ marginBottom: '20px', padding: '12px', background: '#F0F7FF', borderRadius: '8px', border: '1px solid #BBDEFB', fontSize: '0.85rem', textAlign: 'center' }}>
-            <strong style={{ color: '#1565C0' }}>⚙ Modo desarrollo:</strong>
-            <div style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '6px', color: '#1565C0', marginTop: '4px' }}>{codigoDebug}</div>
-          </div>
-        )}
 
         <form onSubmit={handleVerificarCodigo} style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '8px', textAlign: 'left' }}>

@@ -13,6 +13,9 @@ def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
     RF-13: asigna un revisor a una ponencia.
     Valida que no exceda el máximo y que el revisor no sea el autor.
     """
+    if not ponencia.conferencia:
+        raise ValidationError("La ponencia debe estar asociada a una conferencia para asignar revisores.")
+
     if revisor == ponencia.autor_principal:
         raise ValidationError("El revisor no puede ser el autor de la ponencia.")
 
@@ -113,6 +116,8 @@ def asignar_revisores_automatico(ponencia):
     coincida con el área temática de la ponencia.
     Si no hay por categoría, asigna cualquier revisor disponible.
     """
+    if not ponencia.conferencia:
+        raise ValidationError("La ponencia debe estar asociada a una conferencia.")
     min_rev = ponencia.conferencia.min_revisores
     revisores = _buscar_revisores_conferencia(
         ponencia.conferencia, ponencia.area_tematica, ponencia.autor_principal

@@ -94,11 +94,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
     })
       .then((r) => r.json())
       .then((data) => {
-        const lista = Array.isArray(data)
-          ? data.filter((c) => c.estado === 'abierta' || c.estado === 'activa')
-          : data.results
-            ? data.results.filter((c) => c.estado === 'abierta' || c.estado === 'activa')
-            : [];
+        const lista = Array.isArray(data) ? data : data.results || [];
         if (lista.length > 0) {
           setConferenciaSlug(lista[0].slug || lista[0].id);
         }
@@ -152,7 +148,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
   };
 
   const validar = () => {
-    if (!conferenciaSlug) return 'No hay conferencias activas disponibles.';
+    if (!conferenciaSlug) return 'Selecciona una conferencia.';
     if (!titulo.trim()) return 'El título es obligatorio.';
     if (!resumen.trim()) return 'El resumen es obligatorio.';
     const palabras = resumen.trim().split(/\s+/);

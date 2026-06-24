@@ -44,9 +44,10 @@ function MisPonencias() {
 
   useEffect(() => {
     load();
+    const interval = setInterval(load, 15000);
     const unsub1 = on('ponencia:actualizada', load);
     const unsub2 = on('review:completada', load);
-    return () => { unsub1(); unsub2(); };
+    return () => { clearInterval(interval); unsub1(); unsub2(); };
   }, []);
 
   const uniqueAreas = [...new Set(list.map((s) => s.area_tematica).filter(Boolean))];

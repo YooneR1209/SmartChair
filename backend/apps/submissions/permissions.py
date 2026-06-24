@@ -19,6 +19,18 @@ class EsOrganizadorDeLaConferencia(BasePermission):
         return obj.conferencia.organizador == user
 
 
+class PuedeEliminarPonencia(BasePermission):
+    """Admin global, organizador de la conferencia o autor pueden eliminar."""
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        if user.rol == 'administrador' or user.rol == 'organizador':
+            return True
+        if obj.conferencia.organizador == user:
+            return True
+        return obj.autor_principal == user
+
+
 class PuedeVerPonencia(BasePermission):
     """
     Puede ver una ponencia:

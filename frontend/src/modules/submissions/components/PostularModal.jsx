@@ -312,14 +312,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
                   }}>
                   {pagoLoading ? 'Preparando pago...' : 'Pagar $20 USD'}
                 </button>
-                <button onClick={() => { if (onSuccess) onSuccess(); if (onClose) onClose(); }}
-                  style={{
-                    marginTop: '8px', width: '100%', height: '40px', border: '1px solid #E5E8EB',
-                    borderRadius: '10px', background: '#FFF', color: '#5D6D7E',
-                    fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  }}>
-                  Pagar después
-                </button>
               </div>
             ) : (
               <div style={{ marginTop: '24px' }}>

@@ -102,6 +102,10 @@ export const conferencias = {
       method: 'POST',
       body: formData,
     }),
+  eliminarPonencia: (ponenciaId) =>
+    request(`/conferencias/ponencias/${ponenciaId}/`, {
+      method: 'DELETE',
+    }),
   listarParticipantes: (slug) => request(`/conferencias/${slug}/participantes/`),
 };
 

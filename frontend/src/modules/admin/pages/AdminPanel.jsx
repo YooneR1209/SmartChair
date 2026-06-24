@@ -127,6 +127,7 @@ function AdminPanel() {
   const [pagosLoading, setPagosLoading] = useState(true);
   const [pagosError, setPagosError] = useState('');
   const [confirmDeleteSlug, setConfirmDeleteSlug] = useState(null);
+  const [confirmDeletePonencia, setConfirmDeletePonencia] = useState(null);
   const [editConference, setEditConference] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -206,6 +207,13 @@ function AdminPanel() {
     setConfirmDeleteSlug(null);
     conferencias.eliminar(slug)
       .then(() => { addToast('Conferencia eliminada', 'success'); fetchConfs(); })
+      .catch((e) => addToast(e.message, 'error'));
+  };
+
+  const handleEliminarPonencia = (id) => {
+    setConfirmDeletePonencia(null);
+    conferencias.eliminarPonencia(id)
+      .then(() => { addToast('Ponencia eliminada', 'success'); fetchPosts(postsFilter); })
       .catch((e) => addToast(e.message, 'error'));
   };
 
@@ -529,16 +537,17 @@ function AdminPanel() {
           emptyState('description', 'No hay postulaciones registradas.')
         ) : (
           <div className="table-scroll" style={{ border: '1px solid ' + C.border, borderRadius: '10px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-            <div style={{ ...tableHeaderStyle, gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr' }}>
+            <div style={{ ...tableHeaderStyle, gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr 60px' }}>
               <span>Título</span>
               <span>Conferencia</span>
               <span>Autor</span>
               <span>Área</span>
               <span>Estado</span>
               <span>Fecha</span>
+              <span style={{ textAlign: 'center' }}>Acción</span>
             </div>
             {posts.map((p, idx) => (
-              <div key={p.id} style={{ ...(idx % 2 === 0 ? rowStyle : rowAlt), gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr' }}
+              <div key={p.id} style={{ ...(idx % 2 === 0 ? rowStyle : rowAlt), gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr 60px' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = C.goldBg}
                 onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#FAFBFC'}>
                 <span style={{ fontWeight: 600, color: C.dark }}>{p.titulo || '—'}</span>
@@ -547,6 +556,16 @@ function AdminPanel() {
                 <span style={{ color: C.textSecondary, fontSize: '12px' }}>{p.area_tematica || '—'}</span>
                 <Badge estado={p.estado} />
                 <span style={{ color: C.textSecondary, fontSize: '12px' }}>{formatDateTime(p.postulada_en || p.fecha_creacion || p.created_at)}</span>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    style={{ ...btnBase, padding: '5px 8px', display: 'flex', alignItems: 'center', gap: '4px', color: C.red, borderColor: C.red }}
+                    onClick={() => setConfirmDeletePonencia(p.id)}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF5F5'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -613,6 +632,34 @@ function AdminPanel() {
                 Cancelar
               </button>
               <button onClick={() => handleEliminarConf(confirmDeleteSlug)}
+                style={{ padding: '8px 16px', border: 'none', borderRadius: '8px', background: C.red, color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeletePonencia && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.4)',
+        }} onClick={() => setConfirmDeletePonencia(null)}>
+          <div style={{
+            background: '#fff', borderRadius: '14px', padding: '24px', maxWidth: '400px', width: '90%',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 700, color: C.dark }}>¿Eliminar ponencia?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: '14px', color: C.textSecondary, lineHeight: 1.5 }}>
+              Se eliminarán también las revisiones, veredictos, respuestas y pagos asociados. Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmDeletePonencia(null)}
+                style={{ padding: '8px 16px', border: '1px solid ' + C.border, borderRadius: '8px', background: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>
+                Cancelar
+              </button>
+              <button onClick={() => handleEliminarPonencia(confirmDeletePonencia)}
                 style={{ padding: '8px 16px', border: 'none', borderRadius: '8px', background: C.red, color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>
                 Eliminar
               </button>

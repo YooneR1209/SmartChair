@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { conferencias, reviews } from '../../../shared/services/api';
 import AssignReviewersModal from '../../../shared/components/AssignReviewersModal';
 import { useToast } from '../../../shared/components/ToastContext';
+import { on } from '../../../shared/services/events';
 
 const C = {
   dark: '#1A1A2E',
@@ -63,6 +64,9 @@ function GestionarPostulaciones() {
       setLoadingPon(false);
     };
     load();
+    const interval = setInterval(load, 15000);
+    const unsub = on('review:completada', load);
+    return () => { clearInterval(interval); unsub(); };
   }, [selectedConf]);
 
   const filtered = ponencias.filter(p =>

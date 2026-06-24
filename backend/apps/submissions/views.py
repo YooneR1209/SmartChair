@@ -10,8 +10,9 @@ from .serializers import (
     PonenciaListSerializer, PonenciaDetailSerializer,
     CambiarEstadoSerializer, ConfirmarPagoSerializer, EnviarCambiosSerializer,
 )
-from .permissions import EsAutorDeLaPonencia, EsOrganizadorDeLaConferencia, PuedeVerPonencia
+from .permissions import EsAutorDeLaPonencia, EsOrganizadorDeLaConferencia, PuedeVerPonencia, PuedeEliminarPonencia
 from . import services
+from apps.payments.models import Pago
 
 
 class PonenciaListCreateView(generics.ListCreateAPIView):
@@ -84,9 +85,16 @@ class PonenciaDetailView(generics.RetrieveUpdateDestroyAPIView):
         return ctx
 
     def get_permissions(self):
-        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
-            return [IsAuthenticated(), EsAutorDeLaPonencia()]
-        return [IsAuthenticated(), PuedeVerPonencia()]
+        if self.request.method == 'GET':
+            return [IsAuthenticated(), PuedeVerPonencia()]
+        if self.request.method == 'DELETE':
+            return [IsAuthenticated(), PuedeEliminarPonencia()]
+        return [IsAuthenticated(), EsAutorDeLaPonencia()]
+
+    def perform_destroy(self, instance):
+        # Limpiar pagos relacionados (Pago no tiene FK, usamos referencia_tipo/referencia_id)
+        Pago.objects.filter(referencia_tipo='Ponencia', referencia_id=instance.id).delete()
+        instance.delete()
 
 
 class CambiarEstadoView(APIView):
@@ -185,6 +193,7 @@ class MisPostulacionesView(APIView):
                 'actualizado_en': p.actualizado_en,
                 'conferencia_nombre': p.conferencia.nombre,
                 'conferencia_slug': p.conferencia.slug,
+                'conferencia_es_de_pago': p.conferencia.es_de_pago,
                 'archivo_url': p.archivo.url if p.archivo else None,
                 'autor_nombre': p.autor_principal.nombre_completo,
             })

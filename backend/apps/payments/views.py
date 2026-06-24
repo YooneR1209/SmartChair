@@ -73,6 +73,17 @@ class ConfirmarPagoView(APIView):
         pago.stripe_charge_id = charge_id or ""
         pago.estado = Pago.Estado.COMPLETADO
         pago.save()
+
+        # Marcar la ponencia como pago_confirmado si corresponde
+        if pago.referencia_tipo == 'Ponencia' and pago.referencia_id:
+            from apps.submissions.models import Ponencia
+            try:
+                ponencia = Ponencia.objects.get(id=pago.referencia_id, autor_principal=request.user)
+                ponencia.pago_confirmado = True
+                ponencia.save(update_fields=['pago_confirmado', 'actualizado_en'])
+            except Ponencia.DoesNotExist:
+                pass
+
         return Response({"estado": pago.estado, "pago_id": pago.id})
 
 

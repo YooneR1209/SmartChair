@@ -54,9 +54,6 @@ const labelStyle = { color: '#1A1A2E', fontSize: '13px', fontWeight: 700, margin
 
 function PostularModal({ isOpen, onClose, onSuccess }) {
   const { addToast } = useToast();
-  const [conferencias, setConferencias] = useState([]);
-  const [conferenciaSlug, setConferenciaSlug] = useState('');
-  const [conferenciaDetalle, setConferenciaDetalle] = useState(null);
   const [titulo, setTitulo] = useState('');
   const [resumen, setResumen] = useState('');
   const [areaTematica, setAreaTematica] = useState('');
@@ -71,55 +68,18 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
   const [clientSecret, setClientSecret] = useState('');
   const [fieldErrors, setFieldErrors] = useState([]);
   const [exito, setExito] = useState(false);
-  const [cargandoConfs, setCargandoConfs] = useState(true);
   const [focusedField, setFocusedField] = useState(null);
-  const [confOpen, setConfOpen] = useState(false);
   const [areaOpen, setAreaOpen] = useState(false);
-  const confRef = useRef(null);
   const areaRef = useRef(null);
 
   useEffect(() => {
-    if (!confOpen && !areaOpen) return;
+    if (!areaOpen) return;
     const handler = (e) => {
-      if (confOpen && confRef.current && !confRef.current.contains(e.target)) setConfOpen(false);
-      if (areaOpen && areaRef.current && !areaRef.current.contains(e.target)) setAreaOpen(false);
+      if (areaRef.current && !areaRef.current.contains(e.target)) setAreaOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [confOpen, areaOpen]);
-
-  const getToken = useCallback(() => localStorage.getItem('token'), []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setCargandoConfs(true);
-    fetch(`${API_URL}/conferencias/`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const lista = Array.isArray(data) ? data : data.results || [];
-        setConferencias(lista);
-        if (lista.length > 0) {
-          setConferenciaSlug(lista[0].slug || lista[0].id);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCargandoConfs(false));
-  }, [isOpen, getToken]);
-
-  useEffect(() => {
-    if (!conferenciaSlug) {
-      setConferenciaDetalle(null);
-      return;
-    }
-    fetch(`${API_URL}/conferencias/${conferenciaSlug}/`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
-      .then((r) => r.json())
-      .then((data) => setConferenciaDetalle(data))
-      .catch(() => setConferenciaDetalle(null));
-  }, [conferenciaSlug, getToken]);
+  }, [areaOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -131,10 +91,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
       setError('');
       setFieldErrors([]);
       setExito(false);
-      setConferencias([]);
-      setConferenciaSlug('');
-      setConferenciaDetalle(null);
-      setConfOpen(false);
     }
   }, [isOpen]);
 
@@ -155,7 +111,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
   };
 
   const validar = () => {
-    if (!conferenciaSlug) return 'Selecciona una conferencia.';
     if (!titulo.trim()) return 'El título es obligatorio.';
     if (!resumen.trim()) return 'El resumen es obligatorio.';
     const palabras = resumen.trim().split(/\s+/);
@@ -182,7 +137,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
       if (coautores.length > 0) {
         formData.append('autores', JSON.stringify(coautores.filter((c) => c.nombre.trim())));
       }
-      const res = await fetch(`${API_URL}/conferencias/${conferenciaSlug}/ponencias/`, {
+      const res = await fetch(`${API_URL}/conferencias/ponencias/`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${getToken()}` },
         body: formData,
@@ -265,17 +220,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
           <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>close</span>
         </button>
 
-        {cargandoConfs ? (
-          <div className="flex flex-col items-center justify-center" style={{ padding: '80px 24px' }}>
-            <div
-              style={{
-                width: 40, height: 40, border: '3px solid #E5E8EB', borderTopColor: '#D4AC0D',
-                borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-              }}
-            />
-            <p style={{ marginTop: 16, fontSize: 14, color: '#5D6D7E' }}>Cargando...</p>
-          </div>
-        ) : exito ? (
+        {exito ? (
           <div className="text-center" style={{ padding: '40px 24px' }}>
             <div
               style={{
@@ -361,72 +306,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
                   Completá los datos para enviar tu trabajo
                 </p>
               </div>
-            </div>
-
-            <div className="mb-5" ref={confRef} style={{ position: 'relative' }}>
-              <label style={labelStyle}>
-                Conferencia <span style={{ color: '#C0392B' }}>*</span>
-              </label>
-              <div
-                onClick={() => setConfOpen(!confOpen)}
-                onFocus={() => setFocusedField('conf')}
-                onBlur={() => setFocusedField(null)}
-                tabIndex={0}
-                style={{
-                  ...inputStyle(focusedField === 'conf' || confOpen),
-                  ...{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', height: 44, borderRadius: 12, padding: '0 14px', fontSize: '13px' },
-                }}
-              >
-                <span style={{ color: conferenciaSlug ? '#2C3E50' : '#9CA3AF' }}>
-                  {conferenciaSlug
-                    ? (conferencias.find(c => (c.slug || c.id) === conferenciaSlug)?.nombre || 'Conferencia seleccionada')
-                    : cargandoConfs ? 'Cargando...' : 'Seleccionar conferencia'}
-                </span>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#9CA3AF', transition: 'transform 0.2s', transform: confOpen ? 'rotate(180deg)' : 'none' }}>
-                  expand_more
-                </span>
-              </div>
-              {confOpen && (
-                <div
-                  style={{
-                    position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                    background: '#FFF', borderRadius: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                    zIndex: 100, maxHeight: 280, overflowY: 'auto', border: '1px solid #E5E8EB',
-                  }}
-                >
-                  {conferencias.map((conf) => (
-                    <div
-                      key={conf.slug || conf.id}
-                      onClick={() => { setConferenciaSlug(conf.slug || conf.id); setConfOpen(false); }}
-                      style={{
-                        padding: '9px 14px', fontSize: '13px', cursor: 'pointer',
-                        color: conferenciaSlug === (conf.slug || conf.id) ? '#9A6F00' : '#2C3E50',
-                        background: conferenciaSlug === (conf.slug || conf.id) ? '#FEF9E7' : 'transparent',
-                        fontWeight: conferenciaSlug === (conf.slug || conf.id) ? 700 : 400,
-                        borderLeft: conferenciaSlug === (conf.slug || conf.id) ? '3px solid #D4AC0D' : '3px solid transparent',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={(e) => { if (conferenciaSlug !== (conf.slug || conf.id)) { e.currentTarget.style.background = '#F5F7FA'; } }}
-                      onMouseLeave={(e) => { if (conferenciaSlug !== (conf.slug || conf.id)) { e.currentTarget.style.background = 'transparent'; } }}
-                    >
-                      <div style={{ fontWeight: 600 }}>{conf.nombre}</div>
-                      <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: 2 }}>
-                        {conf.estado} {conf.fecha_inicio ? `· ${conf.fecha_inicio}` : ''}
-                      </div>
-                    </div>
-                  ))}
-                  {conferencias.length === 0 && !cargandoConfs && (
-                    <div style={{ padding: '14px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>
-                      No hay conferencias disponibles
-                    </div>
-                  )}
-                  {cargandoConfs && (
-                    <div style={{ padding: '14px', fontSize: '13px', color: '#9CA3AF', textAlign: 'center' }}>
-                      Cargando...
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div className="mb-5">

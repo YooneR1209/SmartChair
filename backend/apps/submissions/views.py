@@ -40,15 +40,18 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
         conferencia = self.get_conferencia()
         qs          = Ponencia.objects.filter(conferencia=conferencia).select_related('autor_principal')
 
-        if user.rol in ('administrador', 'organizador'):
-            return qs
-        if conferencia.organizador == user:
-            return qs
-        if ConferenciaUsuario.objects.filter(
-            conferencia=conferencia, usuario=user,
-            rol__in=('organizador', 'revisor'), activo=True,
-        ).exists():
-            return qs
+        es_org = (user.rol == 'organizador' or
+                  (conferencia and conferencia.organizador == user) or
+                  ConferenciaUsuario.objects.filter(
+                      conferencia=conferencia, usuario=user,
+                      rol__in=('organizador', 'revisor'), activo=True,
+                  ).exists())
+
+        if user.rol == 'administrador' or es_org:
+            from django.db.models import Q
+            return Ponencia.objects.filter(
+                Q(conferencia=conferencia) | Q(conferencia__isnull=True)
+            ).select_related('autor_principal')
         # Los autores solo ven sus propias ponencias
         return qs.filter(autor_principal=user)
 

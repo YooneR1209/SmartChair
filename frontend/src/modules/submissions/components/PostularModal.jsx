@@ -54,6 +54,7 @@ const labelStyle = { color: '#1A1A2E', fontSize: '13px', fontWeight: 700, margin
 
 function PostularModal({ isOpen, onClose, onSuccess }) {
   const { addToast } = useToast();
+  const getToken = useCallback(() => localStorage.getItem('token'), []);
   const [titulo, setTitulo] = useState('');
   const [resumen, setResumen] = useState('');
   const [areaTematica, setAreaTematica] = useState('');

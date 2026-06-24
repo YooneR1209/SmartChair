@@ -1,6 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '';
-const API_URL = BASE_URL ? `${BASE_URL}/api` : '/api';
-
+const BASE_URL = '__API_BASE_URL__';
+const API_URL = BASE_URL && !BASE_URL.includes('__API_BASE_URL__') ? `${BASE_URL}/api` : '/api';
 export function getToken() {
   return localStorage.getItem('token');
 }

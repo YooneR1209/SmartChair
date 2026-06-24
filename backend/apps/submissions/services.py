@@ -102,15 +102,16 @@ def confirmar_pago(ponencia, referencia):
 def cambiar_estado(ponencia, nuevo_estado, usuario):
     """
     Cambia el estado de una ponencia. Solo organizador o admin pueden hacerlo.
-
+    Si usuario es None (acción del sistema desde veredicto automático), se permite.
     Valida que la transición sea permitida según el flujo definido.
     """
-    user_es_admin = getattr(usuario, 'rol', '') == 'administrador'
-    user_es_organizador = getattr(usuario, 'rol', '') == 'organizador'
-    es_organizador_conf = ponencia.conferencia and ponencia.conferencia.organizador == usuario
+    if usuario is not None:
+        user_es_admin = getattr(usuario, 'rol', '') == 'administrador'
+        user_es_organizador = getattr(usuario, 'rol', '') == 'organizador'
+        es_organizador_conf = ponencia.conferencia and ponencia.conferencia.organizador == usuario
 
-    if not (user_es_admin or user_es_organizador or es_organizador_conf):
-        raise PermissionDenied('Solo el organizador o un administrador puede cambiar el estado.')
+        if not (user_es_admin or user_es_organizador or es_organizador_conf):
+            raise PermissionDenied('Solo el organizador o un administrador puede cambiar el estado.')
 
     estado_actual = ponencia.estado
     transiciones = _TRANSICIONES_VALIDAS.get(estado_actual, set())

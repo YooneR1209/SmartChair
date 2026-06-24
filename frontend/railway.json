@@ -1,10 +1,7 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "buildArgs": {
-      "VITE_API_URL": "{{ VITE_API_URL }}"
-    }
+    "builder": "DOCKERFILE"
   },
   "deploy": {
     "numReplicas": 1,

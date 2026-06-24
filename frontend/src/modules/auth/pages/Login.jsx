@@ -7,6 +7,7 @@ function Login() {
   const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -68,8 +69,15 @@ function Login() {
 
       <section className="auth-right" style={{
         background: '#FDFAF2', display: 'flex', flexDirection: 'column',
-        height: '100vh', padding: '48px 32px',
+        height: '100vh', padding: '48px 32px', position: 'relative',
       }}>
+        <span onClick={() => navigate('/')}
+          style={{ position: 'absolute', top: '24px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#5D6D7E', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#D4AC0D'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#5D6D7E'}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+          Inicio
+        </span>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{
             width: '100%', maxWidth: '420px', background: '#fff',
@@ -120,10 +128,14 @@ function Login() {
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
                   <input
-                    type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                    type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                     placeholder="********"
                     style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
                   />
+                  <span className="material-symbols-outlined" onClick={() => setShowPassword(!showPassword)}
+                    style={{ fontSize: '20px', color: '#9CA3AF', cursor: 'pointer', flexShrink: 0, userSelect: 'none' }}>
+                    {showPassword ? 'visibility' : 'visibility_off'}
+                  </span>
                 </div>
               </div>
 

@@ -415,16 +415,16 @@ function AdminPanel() {
                     <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
                   ))}
                 </select>
-                <Badge estado={u.activo ? 'activo' : 'inactivo'} />
+                <Badge estado={u.is_active ? 'activo' : 'inactivo'} />
                 <span style={{ color: C.textSecondary, fontSize: '12px' }}>{formatDate(u.fecha_registro || u.date_joined)}</span>
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <button
-                    style={{ ...btnBase, color: u.activo ? C.red : C.green, borderColor: u.activo ? C.red : C.green }}
+                    style={{ ...btnBase, color: u.is_active ? C.red : C.green, borderColor: u.is_active ? C.red : C.green }}
                     onClick={() => handleToggleEstado(u.id)}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = u.activo ? C.red : C.green; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = u.activo ? C.red : C.green; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = u.is_active ? C.red : C.green; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = u.is_active ? C.red : C.green; }}
                   >
-                    {u.activo ? 'Desactivar' : 'Activar'}
+                    {u.is_active ? 'Desactivar' : 'Activar'}
                   </button>
                 </div>
               </div>

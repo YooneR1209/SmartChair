@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 const ROLES = [
   {
@@ -38,6 +39,7 @@ const ROLES = [
 function RoleSelector({ onSelect, backendRole }) {
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleConfirm = () => {
     if (!selected) return;
@@ -76,6 +78,14 @@ function RoleSelector({ onSelect, backendRole }) {
           @keyframes roleFadeIn { from { opacity:0; transform:translateY(20px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
           @keyframes cardPop { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
         `}</style>
+
+        <span onClick={() => navigate('/login')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#5D6D7E', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s', marginBottom: '16px' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#D4AC0D'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#5D6D7E'}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+          Volver
+        </span>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div

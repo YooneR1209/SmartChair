@@ -64,6 +64,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [adminStatsData, setAdminStatsData] = useState(null);
   const [adminUsers, setAdminUsers] = useState([]);
+  const [viewReview, setViewReview] = useState(null);
 
   const loadData = async () => {
     try {
@@ -619,7 +620,7 @@ function Dashboard() {
         </p>
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           <button
-            onClick={() => navigate('/mis-revisiones')}
+            onClick={() => isCompletada ? setViewReview(asg) : navigate('/mis-revisiones')}
             style={{
               fontSize: '11px',
               fontWeight: 700,
@@ -843,46 +844,123 @@ function Dashboard() {
 
   if (userRole === 'REVISOR') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {breadcrumb}
-        {pageTitle}
+      <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {breadcrumb}
+          {pageTitle}
 
-        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-          <StatCard
-            label="Revisiones Asignadas"
-            value={revStats.total}
-            icon="rate_review"
-            subtitle={revStats.total > 0 ? `${revStats.total} asignada${revStats.total !== 1 ? 's' : ''}` : 'Sin asignaciones'}
-          />
-          <StatCard
-            label="Pendientes"
-            value={revStats.pendientes}
-            icon="schedule"
-            subtitle={revStats.pendientes > 0 ? `${revStats.pendientes} pendiente${revStats.pendientes !== 1 ? 's' : ''}` : 'Al día'}
-            subtitleColor={revStats.pendientes > 0 ? '#C0392B' : '#1E8449'}
-          />
-          <StatCard
-            label="Completadas"
-            value={revStats.completadas}
-            icon="check_circle"
-            subtitle={revStats.completadas > 0 ? `${revStats.completadas} completada${revStats.completadas !== 1 ? 's' : ''}` : 'Aún sin completar'}
-            subtitleColor="#1E8449"
-          />
+          <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <StatCard
+              label="Revisiones Asignadas"
+              value={revStats.total}
+              icon="rate_review"
+              subtitle={revStats.total > 0 ? `${revStats.total} asignada${revStats.total !== 1 ? 's' : ''}` : 'Sin asignaciones'}
+            />
+            <StatCard
+              label="Completadas"
+              value={revStats.completadas}
+              icon="check_circle"
+              subtitle={revStats.completadas > 0 ? `${revStats.completadas} finalizada${revStats.completadas !== 1 ? 's' : ''}` : 'Aún sin completar'}
+              subtitleColor={revStats.completadas > 0 ? '#1E8449' : undefined}
+            />
+            <StatCard
+              label="Pendientes"
+              value={revStats.pendientes}
+              icon="schedule"
+              subtitle={revStats.pendientes > 0 ? `${revStats.pendientes} por revisar` : 'Todo al día'}
+              subtitleColor={revStats.pendientes === 0 ? '#1E8449' : undefined}
+            />
+          </div>
+
+          <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+            <div>
+              {sectionHeader('Mis Revisiones Recientes', 'Ver todas', '/mis-revisiones')}
+              {recentAssignments.length === 0
+                ? emptyCard('rate_review', 'No tienes revisiones asignadas.', 'Ir a Conferencias', () => navigate('/conferencias'))
+                : <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>{recentAssignments.map(renderAssignmentCard)}</div>
+              }
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {sidebarRevStats}
+            </div>
+          </div>
         </div>
 
-        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
-          <div>
-            {sectionHeader('Mis Revisiones Recientes', 'Ver todas', '/mis-revisiones')}
-            {recentAssignments.length === 0
-              ? emptyCard('rate_review', 'No tienes revisiones asignadas.', 'Ir a Conferencias', () => navigate('/conferencias'))
-              : <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>{recentAssignments.map(renderAssignmentCard)}</div>
-            }
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {sidebarRevStats}
+        {viewReview && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+          backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+          background: 'rgba(0,0,0,0.35)',
+        }}
+          onClick={(e) => { if (e.target === e.currentTarget) setViewReview(null); }}>
+          <div style={{
+            background: '#fff', borderRadius: '20px', padding: '32px', width: '100%',
+            maxWidth: '540px', maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(30,132,73,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#1E8449' }}>check_circle</span>
+              </div>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1A1A2E' }}>Detalle de Revisión</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: '#F5F7FA', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Ponencia</span>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.95rem', fontWeight: 600, color: '#1A1A2E' }}>
+                    {viewReview.titulo_ponencia || viewReview.titulo || 'Sin título'}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Veredicto</span>
+                  <span style={{
+                    display: 'inline-block', marginTop: '6px', padding: '4px 12px', borderRadius: '8px',
+                    fontSize: '0.85rem', fontWeight: 700,
+                    background: viewReview.veredicto === 'aceptado' ? 'rgba(30,132,73,0.1)' :
+                      viewReview.veredicto === 'rechazado' ? 'rgba(192,57,43,0.08)' : 'rgba(212,172,13,0.12)',
+                    color: viewReview.veredicto === 'aceptado' ? '#1E8449' :
+                      viewReview.veredicto === 'rechazado' ? '#C0392B' : '#9A6F00',
+                  }}>
+                    {viewReview.veredicto ? viewReview.veredicto.replace(/_/g, ' ') : '—'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Comentario para el autor</span>
+                <p style={{ margin: '6px 0 0', fontSize: '0.85rem', color: '#1A1A2E', lineHeight: 1.6, background: '#F5F7FA', borderRadius: '10px', padding: '14px' }}>
+                  {viewReview.comentario_autor || '—'}
+                </p>
+              </div>
+
+              {viewReview.comentario_privado && (
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9CA3AF' }}>Notas privadas</span>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.85rem', color: '#5D6D7E', lineHeight: 1.6, background: 'rgba(212,172,13,0.08)', borderRadius: '10px', padding: '14px' }}>
+                    {viewReview.comentario_privado}
+                  </p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                <button onClick={() => setViewReview(null)}
+                  style={{
+                    padding: '10px 22px', background: '#1A1A2E', color: '#fff', border: 'none',
+                    borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#2C3E50'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A2E'}>
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      </>
     );
   }
 

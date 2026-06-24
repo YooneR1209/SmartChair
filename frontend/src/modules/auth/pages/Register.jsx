@@ -7,6 +7,8 @@ function Register() {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', nombres: '', apellidos: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
@@ -85,8 +87,15 @@ function Register() {
 
       <section className="auth-right" style={{
         background: '#FDFAF2', display: 'flex', flexDirection: 'column',
-        height: '100vh', padding: '48px 32px',
+        height: '100vh', padding: '48px 32px', position: 'relative',
       }}>
+        <span onClick={() => navigate('/')}
+          style={{ position: 'absolute', top: '24px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#5D6D7E', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#D4AC0D'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#5D6D7E'}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+          Inicio
+        </span>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{
             width: '100%', maxWidth: '420px', background: '#fff',
@@ -164,9 +173,13 @@ function Register() {
                   onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
-                  <input type="password" value={form.password} onChange={handleChange('password')} placeholder="Mínimo 8 caracteres"
+                  <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange('password')} placeholder="Mínimo 8 caracteres"
                     style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
                   />
+                  <span className="material-symbols-outlined" onClick={() => setShowPassword(!showPassword)}
+                    style={{ fontSize: '20px', color: '#9CA3AF', cursor: 'pointer', flexShrink: 0, userSelect: 'none' }}>
+                    {showPassword ? 'visibility' : 'visibility_off'}
+                  </span>
                 </div>
               </div>
               <div>
@@ -181,9 +194,13 @@ function Register() {
                   onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#D0D0D0'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#D4AC0D' }}>lock</span>
-                  <input type="password" value={form.confirmPassword} onChange={handleChange('confirmPassword')} placeholder="Repite la contraseña"
+                  <input type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={handleChange('confirmPassword')} placeholder="Repite la contraseña"
                     style={{ width: '100%', height: '100%', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.92rem', color: '#2C3E50' }}
                   />
+                  <span className="material-symbols-outlined" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{ fontSize: '20px', color: '#9CA3AF', cursor: 'pointer', flexShrink: 0, userSelect: 'none' }}>
+                    {showConfirmPassword ? 'visibility' : 'visibility_off'}
+                  </span>
                 </div>
               </div>
 

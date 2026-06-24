@@ -537,9 +537,8 @@ function AdminPanel() {
           emptyState('description', 'No hay postulaciones registradas.')
         ) : (
           <div className="table-scroll" style={{ border: '1px solid ' + C.border, borderRadius: '10px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-            <div style={{ ...tableHeaderStyle, gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr 60px' }}>
+            <div style={{ ...tableHeaderStyle, gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1fr 60px' }}>
               <span>Título</span>
-              <span>Conferencia</span>
               <span>Autor</span>
               <span>Área</span>
               <span>Estado</span>
@@ -547,11 +546,10 @@ function AdminPanel() {
               <span style={{ textAlign: 'center' }}>Acción</span>
             </div>
             {posts.map((p, idx) => (
-              <div key={p.id} style={{ ...(idx % 2 === 0 ? rowStyle : rowAlt), gridTemplateColumns: '2fr 1.5fr 1fr 1.2fr 1fr 1fr 60px' }}
+              <div key={p.id} style={{ ...(idx % 2 === 0 ? rowStyle : rowAlt), gridTemplateColumns: '2fr 1fr 1fr 1.2fr 1fr 60px' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = C.goldBg}
                 onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#FAFBFC'}>
                 <span style={{ fontWeight: 600, color: C.dark }}>{p.titulo || '—'}</span>
-                <span style={{ color: C.textSecondary, fontSize: '12px' }}>{p.conferencia_nombre || p.conferencia || '—'}</span>
                 <span style={{ color: C.textSecondary, fontSize: '12px' }}>{p.autor_nombre || p.autor || '—'}</span>
                 <span style={{ color: C.textSecondary, fontSize: '12px' }}>{p.area_tematica || '—'}</span>
                 <Badge estado={p.estado} />

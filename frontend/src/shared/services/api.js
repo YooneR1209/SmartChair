@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL
+export const API_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL + '/api'
   : '/api';
 
@@ -37,6 +37,20 @@ export const auth = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
+  verificarEmail: (token) =>
+    request(`/auth/verificar/?token=${encodeURIComponent(token)}`),
+  verificarCodigo: (email, codigo) =>
+    request('/auth/verificar/codigo/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, codigo }),
+    }),
+  reenviarVerificacion: (email) =>
+    request('/auth/verificar/reenviar/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }),
   logout: () =>
     request('/auth/logout/', {
       method: 'POST',
@@ -55,6 +69,8 @@ export const auth = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
+  buscarUsuarios: (search) =>
+    request(`/auth/admin/usuarios/?search=${encodeURIComponent(search)}`),
 };
 
 export const conferencias = {
@@ -85,7 +101,7 @@ export const conferencias = {
   listarRevisores: (slug) => request(`/conferencias/${slug}/revisores/`),
   aceptarInvitacion: (token) =>
     request(`/conferencias/invitaciones/${token}/aceptar/`, { method: 'POST' }),
-  listarPonencias: (slug) => request(`/conferencias/${slug}/ponencias/`),
+  listarPonencias: () => request('/conferencias/ponencias/'),
   postular: (slug, formData) =>
     request(`/conferencias/${slug}/ponencias/`, {
       method: 'POST',
@@ -194,4 +210,10 @@ export const notifications = {
     request('/notifications/test/asignacion-revisor/', { method: 'POST' }),
   testVeredicto: () =>
     request('/notifications/test/veredicto/', { method: 'POST' }),
+  listar: () =>
+    request('/notifications/'),
+  marcarLeida: (id) =>
+    request(`/notifications/${id}/leer/`, { method: 'POST' }),
+  marcarTodasLeidas: () =>
+    request('/notifications/leer-todas/', { method: 'POST' }),
 };

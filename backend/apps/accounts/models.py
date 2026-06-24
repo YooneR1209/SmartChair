@@ -82,3 +82,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def es_organizador(self):
         return self.rol == self.Rol.ORGANIZADOR
+
+
+class VerificacionEmail(models.Model):
+    usuario = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='verificacion'
+    )
+    token = models.CharField(max_length=64, unique=True)
+    codigo = models.CharField(max_length=6)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Verificación de email'
+        verbose_name_plural = 'Verificaciones de email'
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.creado_en}'

@@ -73,8 +73,7 @@ class MiAsignacionSerializer(serializers.ModelSerializer):
     conferencia = serializers.SerializerMethodField()
 
     def get_conferencia(self, obj):
-        conf = obj.ponencia.conferencia
-        return conf.nombre if conf else None
+        return None
     revision_id = serializers.SerializerMethodField()
     estado_revision = serializers.SerializerMethodField()
     veredicto = serializers.SerializerMethodField()

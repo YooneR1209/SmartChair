@@ -13,13 +13,6 @@ class Ponencia(models.Model):
         CAMBIOS_ENVIADOS     = 'cambios_enviados',     'Cambios enviados'
 
     # ── Relaciones ────────────────────────────────────────────────────────────
-    conferencia = models.ForeignKey(
-        'conferences.Conferencia',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='ponencias',
-    )
     autor_principal = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

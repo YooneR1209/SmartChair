@@ -1,6 +1,6 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegistroView, PerfilView, CambiarPasswordView, LogoutView, MiPerfilView
+from rest_framework_simplejwt.views import TokenRefreshView
+from .views import LoginView, RegistroView, ReenviarVerificacionView, VerificarEmailView, VerificarEmailPorCodigoView, PerfilView, CambiarPasswordView, LogoutView, MiPerfilView
 from .admin_views import (
     AdminUsuariosView, AdminCambiarRolView, AdminToggleEstadoView,
     AdminStatsView, AdminPostulacionesView, AdminPagosView,
@@ -9,9 +9,12 @@ from .admin_views import (
 urlpatterns = [
     # Auth
     path('registro/',          RegistroView.as_view(),        name='registro'),
-    path('login/',             TokenObtainPairView.as_view(), name='login'),
+    path('login/',             LoginView.as_view(),           name='login'),
     path('login/refresh/',     TokenRefreshView.as_view(),    name='token-refresh'),
     path('logout/',            LogoutView.as_view(),          name='logout'),
+    path('verificar/',         VerificarEmailView.as_view(),  name='verificar-email'),
+    path('verificar/codigo/',  VerificarEmailPorCodigoView.as_view(), name='verificar-codigo'),
+    path('verificar/reenviar/', ReenviarVerificacionView.as_view(), name='reenviar-verificacion'),
     # Perfil
     path('perfil/',            PerfilView.as_view(),          name='perfil'),
     path('perfil/me/',         MiPerfilView.as_view(),        name='perfil-me'),

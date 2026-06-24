@@ -30,43 +30,26 @@ const ESTADO_MAP = {
 
 function GestionarPostulaciones() {
   const { addToast } = useToast();
-  const [confList, setConfList] = useState([]);
-  const [selectedConf, setSelectedConf] = useState(null);
   const [ponencias, setPonencias] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingPon, setLoadingPon] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedPon, setSelectedPon] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await conferencias.listar();
-        setConfList(Array.isArray(data) ? data : []);
-        if (Array.isArray(data) && data.length > 0) {
-          setSelectedConf(data[0]);
-        }
-      } catch { setConfList([]); }
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedConf) { setPonencias([]); return; }
     let active = true;
     const load = async () => {
       try {
-        const data = await conferencias.listarPonencias(selectedConf.slug);
+        const data = await conferencias.listarPonencias();
         if (active) setPonencias(Array.isArray(data) ? data : []);
       } catch { if (active) setPonencias([]); }
+      setLoading(false);
     };
     load();
     const interval = setInterval(load, 15000);
     const unsub = on('review:completada', load);
     return () => { active = false; clearInterval(interval); unsub(); };
-  }, [selectedConf]);
+  }, []);
 
   const filtered = ponencias.filter(p =>
     !search || p.titulo?.toLowerCase().includes(search.toLowerCase()) ||
@@ -84,7 +67,7 @@ function GestionarPostulaciones() {
     try {
       await reviews.asignarAutomatico(ponenciaId);
       addToast('Revisores asignados automáticamente', 'success');
-      const data = await conferencias.listarPonencias(selectedConf.slug);
+      const data = await conferencias.listarPonencias();
       setPonencias(Array.isArray(data) ? data : []);
     } catch (err) {
       addToast(err.message || 'Error al asignar', 'error');
@@ -108,34 +91,15 @@ function GestionarPostulaciones() {
         <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: C.dark }}>Gestionar Postulaciones</h1>
       </div>
 
-      {confList.length === 0 ? (
-        <div style={{ padding: '60px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid ' + C.border }}>
-          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: C.textMuted }}>event_busy</span>
-          <p style={{ color: C.textSecondary, fontSize: '15px', fontWeight: 600, margin: '12px 0 0' }}>No hay conferencias disponibles.</p>
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid ' + C.border }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '20px', color: C.textSecondary }}>event</span>
-            <label style={{ fontSize: '14px', fontWeight: 600, color: C.dark }}>Conferencia:</label>
-            <select
-              value={selectedConf?.slug || ''}
-              onChange={(e) => setSelectedConf(confList.find(c => c.slug === e.target.value) || null)}
-              style={{
-                flex: 1, minWidth: '250px', height: '44px', borderRadius: '10px', padding: '0 14px',
-                fontSize: '14px', border: '1.5px solid ' + C.border, outline: 'none', background: C.bg, color: C.dark, fontWeight: 500, cursor: 'pointer',
-              }}
-            >
-              {confList.map((c) => (
-                <option key={c.slug} value={c.slug}>{c.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          {loadingPon ? (
+      {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
               <div style={{ width: 36, height: 36, border: '3px solid ' + C.border, borderTopColor: C.goldLight, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               <p style={{ color: C.textSecondary, fontSize: '14px', margin: 0 }}>Cargando postulaciones...</p>
+            </div>
+          ) : ponencias.length === 0 ? (
+            <div style={{ padding: '60px', textAlign: 'center', background: '#fff', borderRadius: '16px', border: '1px solid ' + C.border }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: C.textMuted }}>inbox</span>
+              <p style={{ color: C.textSecondary, fontSize: '15px', fontWeight: 600, margin: '12px 0 0' }}>No hay postulaciones.</p>
             </div>
           ) : (
             <>
@@ -262,19 +226,17 @@ function GestionarPostulaciones() {
               </div>
             </>
           )}
-        </>
-      )}
 
-      {showModal && selectedPon && selectedConf && (
+      {showModal && selectedPon && (
         <AssignReviewersModal
           isOpen={showModal}
           onClose={() => { setShowModal(false); setSelectedPon(null); }}
           ponencia={selectedPon}
-          conferenceSlug={selectedConf.slug}
+          conferenceSlug={null}
           onAssigned={async () => {
             setShowModal(false);
             setSelectedPon(null);
-            const data = await conferencias.listarPonencias(selectedConf.slug);
+            const data = await conferencias.listarPonencias();
             setPonencias(Array.isArray(data) ? data : []);
           }}
         />

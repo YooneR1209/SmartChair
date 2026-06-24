@@ -111,12 +111,9 @@ class AdminPostulacionesView(APIView):
     def get(self, request):
         if not es_admin(request.user):
             return Response({'detail': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
-        ponencias = Ponencia.objects.select_related('conferencia', 'autor_principal').all()
-        conferencia = request.query_params.get('conferencia')
+        ponencias = Ponencia.objects.select_related('autor_principal').all()
         estado = request.query_params.get('estado')
         area = request.query_params.get('area')
-        if conferencia:
-            ponencias = ponencias.filter(conferencia_id=conferencia)
         if estado:
             ponencias = ponencias.filter(estado=estado)
         if area:
@@ -126,8 +123,6 @@ class AdminPostulacionesView(APIView):
             data.append({
                 'id': p.id,
                 'titulo': p.titulo,
-                'conferencia': p.conferencia.nombre if p.conferencia else None,
-                'conferencia_slug': p.conferencia.slug if p.conferencia else None,
                 'autor': p.autor_principal.nombre_completo,
                 'autor_email': p.autor_principal.email,
                 'area_tematica': p.area_tematica,

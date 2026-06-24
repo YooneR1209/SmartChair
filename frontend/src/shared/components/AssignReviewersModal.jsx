@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { reviews, conferencias } from '../services/api';
+import { reviews, conferencias, auth } from '../services/api';
 
 const C = {
   dark: '#1A1A2E',
@@ -63,6 +63,13 @@ function AssignReviewersModal({ isOpen, onClose, ponencia, conferenceSlug, onAss
     setLoading(true);
     setError('');
     try {
+      if (!conferenceSlug) {
+        const data = await auth.buscarUsuarios('');
+        const all = Array.isArray(data) ? data : [];
+        setRevisores(all.filter(u => u.rol === 'revisor' && u.is_active !== false));
+        setLoading(false);
+        return;
+      }
       const data = await conferencias.listarRevisores(conferenceSlug);
       setRevisores(Array.isArray(data) ? data : []);
     } catch (err) {

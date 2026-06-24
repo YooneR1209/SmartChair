@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils.text import slugify
 from django.utils import timezone
+from datetime import timedelta
 import secrets
 from .models import Conferencia, ConferenciaUsuario, InvitacionRevisor
 
@@ -110,8 +111,9 @@ class InvitacionRevisorSerializer(serializers.ModelSerializer):
     class Meta:
         model  = InvitacionRevisor
         fields = ('id', 'email', 'estado', 'expira_en', 'enviada_en')
-        read_only_fields = ('estado', 'enviada_en', 'token')
+        read_only_fields = ('estado', 'enviada_en', 'token', 'expira_en')
 
     def create(self, validated_data):
         validated_data['token'] = secrets.token_urlsafe(32)
+        validated_data['expira_en'] = timezone.now().date() + timedelta(days=30)
         return super().create(validated_data)

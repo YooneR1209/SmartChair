@@ -28,17 +28,10 @@ class AsignarRevisorTests(TestCase):
         self.revisor1 = _make_user("rev1@test.com")
         self.revisor2 = _make_user("rev2@test.com")
 
-        # Mock de conferencia y ponencia
-        self.conferencia = MagicMock()
-        self.conferencia.max_revisores = 3
-        self.conferencia.min_revisores = 2
-        self.conferencia.organizador = _make_user("org@test.com")
-
         self.ponencia = MagicMock()
         self.ponencia.id = 1
-        self.ponencia.pk = 1  # ← agregar esta línea
+        self.ponencia.pk = 1
         self.ponencia.autor_principal = self.autor
-        self.ponencia.conferencia = self.conferencia
         self.ponencia.area_tematica = "IA"
 
     def test_no_puede_asignar_autor_como_revisor(self):
@@ -49,18 +42,12 @@ class AsignarRevisorTests(TestCase):
 
     def test_no_puede_superar_maximo_revisores(self):
         """RF-14: no se pueden asignar más revisores del máximo."""
-        # Ponemos max en 0 para que falle en la validación antes del filter
-        self.ponencia.conferencia.max_revisores = 0
-        # El filter necesita un ponencia real — usamos el chequeo de autor primero
-        # Probamos con revisor != autor para llegar a la validación del máximo
         with self.assertRaises(ValidationError) as ctx:
-            # Forzamos que actuales >= max usando patch
             from unittest.mock import patch
             with patch(
                     "apps.reviews.services.AsignacionRevisor.objects.filter"
             ) as mock_filter:
-                mock_filter.return_value.count.return_value = 0  # actuales = 0
-                self.ponencia.conferencia.max_revisores = 0  # max = 0
+                mock_filter.return_value.count.return_value = 5  # ya hay 5
                 asignar_revisor(self.ponencia, self.revisor1)
         self.assertIn("máximo", str(ctx.exception))
 
@@ -73,13 +60,8 @@ class CompletarRevisionTests(TestCase):
         revisor = _make_user("rev2@test.com")
         organizador = _make_user("org2@test.com")
 
-        conferencia = MagicMock()
-        conferencia.max_revisores = 3
-        conferencia.organizador = organizador
-
         ponencia = MagicMock()
         ponencia.autor_principal = autor
-        ponencia.conferencia = conferencia
         ponencia.pago_completado = False
 
         asignacion = MagicMock()

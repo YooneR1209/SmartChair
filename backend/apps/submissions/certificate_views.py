@@ -20,7 +20,7 @@ class CertificadoListView(APIView):
         qs = Ponencia.objects.filter(
             autor_principal=request.user,
             estado__in=[Ponencia.Estado.ACEPTADA, Ponencia.Estado.ACEPTADA_CON_CAMBIOS],
-        ).select_related('conferencia')
+        )
         data = []
         for p in qs:
             data.append({
@@ -28,7 +28,6 @@ class CertificadoListView(APIView):
                 'titulo': p.titulo,
                 'area_tematica': p.area_tematica,
                 'estado': p.estado,
-                'conferencia_nombre': p.conferencia.nombre if p.conferencia else None,
                 'postulada_en': p.postulada_en,
                 'fecha_creacion': p.postulada_en,
             })
@@ -85,8 +84,7 @@ class CertificadoDescargarView(APIView):
 
         c.setFillColor(HexColor('#5D6D7E'))
         c.setFont('Helvetica', 11)
-        nombre_conf = ponencia.conferencia.nombre if ponencia.conferencia else '—'
-        c.drawCentredString(width / 2, height - 285, f'Presentada en {nombre_conf}')
+        c.drawCentredString(width / 2, height - 285, 'Presentada en SmartChair')
 
         c.setFillColor(HexColor('#5D6D7E'))
         c.setFont('Helvetica', 11)

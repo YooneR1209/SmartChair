@@ -174,6 +174,14 @@ class InvitarRevisorView(generics.CreateAPIView):
             usuario = User.objects.get(email=invitacion.email)
             invitacion.usuario = usuario
             invitacion.save(update_fields=['usuario'])
+            from apps.notifications.services import crear_notificacion
+            crear_notificacion(
+                usuario=usuario,
+                tipo='invitacion_revisor',
+                titulo=f'Invitación como revisor - {conferencia.nombre}',
+                mensaje=f'Has sido invitado como revisor para la conferencia "{conferencia.nombre}".',
+                link=f'/invitacion/{invitacion.token}',
+            )
         except User.DoesNotExist:
             pass
         from apps.notifications.services import enviar_invitacion_revisor

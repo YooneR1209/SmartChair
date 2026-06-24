@@ -156,7 +156,14 @@ function Dashboard() {
 
   const recentSubs = submissions.slice(0, 3);
   const recentConfs = confList.slice(0, 3);
-  const recentAssignments = assignments.slice(0, 3);
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    const aPend = (a.estado_revision || '') !== 'completada';
+    const bPend = (b.estado_revision || '') !== 'completada';
+    if (aPend && !bPend) return -1;
+    if (!aPend && bPend) return 1;
+    return 0;
+  });
+  const recentAssignments = sortedAssignments.slice(0, 3);
   const recentAdminUsers = adminUsers.slice(0, 5);
 
   const breadcrumb = (

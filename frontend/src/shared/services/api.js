@@ -1,4 +1,6 @@
-const API_URL = '__API_BASE_URL__/api';
+const API_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL + '/api'
+  : '/api';
 
 export function getToken() {
   return localStorage.getItem('token');

@@ -129,7 +129,7 @@ function Certificados() {
                   {item.titulo || 'Sin título'}
                 </h3>
                 <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
-                  {item.conferencia_nombre || 'Conferencia no especificada'} · {formatDate(item.postulada_en || item.fecha_creacion)}
+                  {formatDate(item.postulada_en || item.fecha_creacion)}
                 </p>
               </div>
               <button

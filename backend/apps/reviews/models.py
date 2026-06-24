@@ -107,6 +107,8 @@ class Veredicto(models.Model):
     emitido_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="veredictos_emitidos",
     )
     resultado = models.CharField(max_length=25, choices=Resultado.choices)

@@ -33,35 +33,10 @@ class PonenciaDetailSerializer(serializers.ModelSerializer):
         model  = Ponencia
         fields = '__all__'
         read_only_fields = (
-            'estado', 'autor_principal', 'conferencia',
+            'estado', 'autor_principal',
             'pago_confirmado', 'pago_referencia',
             'postulada_en', 'actualizado_en', 'cambios_enviados_en',
         )
-
-    def _get_conferencia(self):
-        return self.context.get('conferencia')
-
-    def validate_archivo(self, value):
-        conferencia = self._get_conferencia()
-        if conferencia and conferencia.formatos_archivo_permitidos:
-            ext = value.name.rsplit('.', 1)[-1].lower()
-            if ext not in conferencia.formatos_archivo_permitidos:
-                raise serializers.ValidationError(
-                    f'Formato .{ext} no permitido. '
-                    f'Formatos aceptados: {", ".join(conferencia.formatos_archivo_permitidos)}.'
-                )
-        return value
-
-    def validate_autores(self, value):
-        conferencia = self._get_conferencia()
-        if conferencia:
-            total = 1 + len(value)
-            if total > conferencia.max_autores:
-                raise serializers.ValidationError(
-                    f'Se superó el máximo de {conferencia.max_autores} autores '
-                    f'(autor principal + {conferencia.max_autores - 1} coautores).'
-                )
-        return value
 
 
 class CambiarEstadoSerializer(serializers.Serializer):

@@ -11,16 +11,16 @@ class RespuestaFormularioInline(admin.TabularInline):
 @admin.register(Ponencia)
 class PonenciaAdmin(admin.ModelAdmin):
     list_display   = (
-        'titulo', 'autor_principal', 'conferencia',
+        'titulo', 'autor_principal',
         'area_tematica', 'estado', 'pago_confirmado', 'postulada_en',
     )
-    list_filter    = ('estado', 'pago_confirmado', 'conferencia')
-    search_fields  = ('titulo', 'autor_principal__email', 'conferencia__nombre')
+    list_filter    = ('estado', 'pago_confirmado')
+    search_fields  = ('titulo', 'autor_principal__email')
     readonly_fields = ('postulada_en', 'actualizado_en', 'cambios_enviados_en')
     inlines        = [RespuestaFormularioInline]
 
     fieldsets = (
-        ('Identificación',  {'fields': ('conferencia', 'autor_principal', 'titulo', 'resumen')}),
+        ('Identificación',  {'fields': ('autor_principal', 'titulo', 'resumen')}),
         ('Contenido',       {'fields': ('area_tematica', 'autores', 'archivo', 'archivo_revisado')}),
         ('Estado',          {'fields': ('estado', 'comentario_estado')}),
         ('Pago',            {'fields': ('pago_confirmado', 'pago_referencia')}),

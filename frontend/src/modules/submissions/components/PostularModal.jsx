@@ -3,7 +3,7 @@ import { useToast } from '../../../shared/components/ToastContext';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements, Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-const API_URL = '__API_BASE_URL__/api';
+const API_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL + '/api' : '/api';
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 const stripeKeyValid = STRIPE_KEY && STRIPE_KEY !== 'pk_test_placeholder' && STRIPE_KEY.startsWith('pk_');
 const stripePromise = stripeKeyValid ? loadStripe(STRIPE_KEY) : null;
@@ -260,14 +260,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
                     opacity: pagoLoading ? 0.6 : 1,
                   }}>
                   {pagoLoading ? 'Preparando pago...' : 'Pagar $20 USD'}
-                </button>
-                <button onClick={() => { if (onSuccess) onSuccess(); if (onClose) onClose(); }}
-                  style={{
-                    marginTop: '8px', width: '100%', height: '40px', border: '1px solid #E5E8EB',
-                    borderRadius: '10px', background: '#FFF', color: '#5D6D7E',
-                    fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                  }}>
-                  Pagar después
                 </button>
               </div>
             ) : (

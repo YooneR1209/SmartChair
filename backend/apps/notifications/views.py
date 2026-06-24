@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 
 # ----Bienvenida---
 from apps.notifications.services import enviar_bienvenida
@@ -25,9 +26,39 @@ from apps.notifications.services import enviar_cambio_fecha
 #-------- ------------
 
 #para tests desde insomnia ( omitir con SMTP real)
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import permission_classes
-#----------------------------------------
+
+from .models import Notificacion
+from .serializers import NotificacionSerializer
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def listar_notificaciones(request):
+    qs = Notificacion.objects.filter(usuario=request.user)[:50]
+    serializer = NotificacionSerializer(qs, many=True)
+    no_leidas = Notificacion.objects.filter(usuario=request.user, leida=False).count()
+    return Response({'results': serializer.data, 'no_leidas': no_leidas})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def marcar_leida(request, pk):
+    try:
+        notif = Notificacion.objects.get(pk=pk, usuario=request.user)
+    except Notificacion.DoesNotExist:
+        return Response({'detail': 'Notificacion no encontrada.'}, status=404)
+    notif.leida = True
+    notif.save(update_fields=['leida'])
+    return Response({'detail': 'ok'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def marcar_todas_leidas(request):
+    Notificacion.objects.filter(usuario=request.user, leida=False).update(leida=True)
+    return Response({'detail': 'ok'})
 
 # Create your views here.
 #([IsAuthenticated]) produccion real || ([AllowAny]) Tests Locales desde insomnia

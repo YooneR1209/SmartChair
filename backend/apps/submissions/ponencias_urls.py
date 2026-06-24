@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import PonenciaCreateView, PonenciaDetailView, CambiarEstadoView, ConfirmarPagoView, EnviarCambiosView, DescargarArchivoView
+from .views import PonenciaListCreateView, PonenciaDetailView, CambiarEstadoView, ConfirmarPagoView, EnviarCambiosView, DescargarArchivoView
 
 urlpatterns = [
-    path('',                                      PonenciaCreateView.as_view(),     name='ponencia-create'),
+    path('',                                      PonenciaListCreateView.as_view(), name='ponencia-list'),
     path('<int:pk>/',                             PonenciaDetailView.as_view(),     name='ponencia-detail'),
     path('<int:pk>/descargar/',                   DescargarArchivoView.as_view(),   name='ponencia-descargar'),
     path('<int:pk>/cambiar-estado/',              CambiarEstadoView.as_view(),       name='ponencia-cambiar-estado'),

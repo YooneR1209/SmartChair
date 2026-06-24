@@ -7,7 +7,7 @@ from .models import AsignacionRevisor, Revision, Veredicto
 @admin.register(AsignacionRevisor)
 class AsignacionRevisorAdmin(admin.ModelAdmin):
     list_display = ("ponencia", "revisor", "es_desempate", "activo", "asignado_en")
-    list_filter = ("activo", "es_desempate", "ponencia__conferencia")
+    list_filter = ("activo", "es_desempate")
     search_fields = ("revisor__email", "revisor__first_name", "ponencia__titulo")
     readonly_fields = ("asignado_en",)
 

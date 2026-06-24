@@ -20,7 +20,6 @@ from .serializers import (
 )
 from .services import (
     asignar_revisor,
-    asignar_revisores_automatico,
     completar_revision,
     emitir_veredicto_final,
 )
@@ -31,15 +30,8 @@ from apps.submissions.models import Ponencia
 #  Helpers de permisos
 # ──────────────────────────────────────────────────────────────
 
-def _es_organizador(user, conferencia):
-    if not conferencia:
-        return user.es_administrador or user.es_organizador
-    if conferencia.organizador == user or user.es_administrador or user.es_organizador:
-        return True
-    from apps.conferences.models import ConferenciaUsuario
-    return ConferenciaUsuario.objects.filter(
-        conferencia=conferencia, usuario=user, rol='organizador', activo=True
-    ).exists()
+def _es_organizador(user):
+    return user.es_administrador or user.es_organizador
 
 
 def _es_revisor_de(user, revision):
@@ -48,8 +40,31 @@ def _es_revisor_de(user, revision):
 
 # ──────────────────────────────────────────────────────────────
 #  POST /api/reviews/asignar/
-#  Asignación manual de revisor (RF-13) — solo organizador
 # ──────────────────────────────────────────────────────────────
+
+class AsignarAutomaticoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, ponencia_id):
+        ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
+
+        if not _es_organizador(request.user):
+            return Response(
+                {"detail": "Solo el organizador puede usar la asignación automática."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        from .services import asignar_revisores_automatico
+        try:
+            total = asignar_revisores_automatico(ponencia)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {"detail": f"Se asignaron {total} revisores automáticamente."},
+            status=status.HTTP_200_OK,
+        )
+
 
 class AsignarRevisorView(APIView):
     permission_classes = [IsAuthenticated]
@@ -62,7 +77,7 @@ class AsignarRevisorView(APIView):
             Ponencia, pk=serializer.validated_data["ponencia_id"]
         )
 
-        if not _es_organizador(request.user, ponencia.conferencia):
+        if not _es_organizador(request.user):
             return Response(
                 {"detail": "Solo el organizador puede asignar revisores."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -84,36 +99,7 @@ class AsignarRevisorView(APIView):
 
 
 # ──────────────────────────────────────────────────────────────
-#  POST /api/reviews/asignar-automatico/<ponencia_id>/
-#  Asignación automática por área temática (RF-13) — solo organizador
-# ──────────────────────────────────────────────────────────────
-
-class AsignarAutomaticoView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, ponencia_id):
-        ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
-
-        if not _es_organizador(request.user, ponencia.conferencia):
-            return Response(
-                {"detail": "Solo el organizador puede usar la asignación automática."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            total = asignar_revisores_automatico(ponencia)
-        except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(
-            {"detail": f"Se asignaron {total} revisores automáticamente."},
-            status=status.HTTP_200_OK,
-        )
-
-
-# ──────────────────────────────────────────────────────────────
 #  GET /api/reviews/mis-asignaciones/
-#  Lista las ponencias asignadas al revisor autenticado
 # ──────────────────────────────────────────────────────────────
 
 class MisAsignacionesView(APIView):
@@ -122,7 +108,7 @@ class MisAsignacionesView(APIView):
     def get(self, request):
         asignaciones = AsignacionRevisor.objects.filter(
             revisor=request.user, activo=True
-        ).select_related("ponencia", "ponencia__conferencia")
+        ).select_related("ponencia")
 
         serializer = MiAsignacionSerializer(asignaciones, many=True)
         return Response(serializer.data)
@@ -130,7 +116,6 @@ class MisAsignacionesView(APIView):
 
 # ──────────────────────────────────────────────────────────────
 #  GET /api/reviews/<revision_id>/
-#  Detalle de una revisión (solo el revisor asignado)
 # ──────────────────────────────────────────────────────────────
 
 class DetalleRevisionView(APIView):
@@ -156,7 +141,6 @@ class DetalleRevisionView(APIView):
 
 # ──────────────────────────────────────────────────────────────
 #  PUT /api/reviews/<revision_id>/completar/
-#  El revisor envía su evaluación (RF-15)
 # ──────────────────────────────────────────────────────────────
 
 class CompletarRevisionView(APIView):
@@ -187,7 +171,7 @@ class CompletarRevisionView(APIView):
                 respuestas_rubrica=data["respuestas_rubrica"],
             )
         except ValidationError as e:
-            return Response({"detail": str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             RevisionParaRevisorSerializer(revision).data,
@@ -197,7 +181,6 @@ class CompletarRevisionView(APIView):
 
 # ──────────────────────────────────────────────────────────────
 #  GET /api/reviews/ponencia/<ponencia_id>/
-#  Lista revisiones de una ponencia (solo organizador) RF-17
 # ──────────────────────────────────────────────────────────────
 
 class RevisionesPonenciaView(APIView):
@@ -206,7 +189,7 @@ class RevisionesPonenciaView(APIView):
     def get(self, request, ponencia_id):
         ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
 
-        if not _es_organizador(request.user, ponencia.conferencia):
+        if not _es_organizador(request.user):
             return Response(
                 {"detail": "Solo el organizador puede ver todas las revisiones."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -223,10 +206,7 @@ class RevisionesPonenciaView(APIView):
 
 # ──────────────────────────────────────────────────────────────
 #  POST /api/reviews/veredicto/<ponencia_id>/
-#  Organizador emite veredicto final manual (RF-16)
-#
 #  GET  /api/reviews/veredicto/<ponencia_id>/
-#  Ver el veredicto de una ponencia (autor o organizador)
 # ──────────────────────────────────────────────────────────────
 
 class VeredictoView(APIView):
@@ -235,7 +215,7 @@ class VeredictoView(APIView):
     def get(self, request, ponencia_id):
         ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
 
-        es_organizador = _es_organizador(request.user, ponencia.conferencia)
+        es_organizador = _es_organizador(request.user)
         es_autor = ponencia.autor_principal == request.user
 
         if not (es_organizador or es_autor):
@@ -244,7 +224,6 @@ class VeredictoView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check if final Veredicto exists
         try:
             veredicto = Veredicto.objects.get(ponencia=ponencia)
             serializer = VeredictoParaAutorSerializer(veredicto)
@@ -255,7 +234,6 @@ class VeredictoView(APIView):
         except Veredicto.DoesNotExist:
             pass
 
-        # No final verdict yet — return partial review feedback
         asignaciones = AsignacionRevisor.objects.filter(ponencia=ponencia, activo=True)
         total = asignaciones.count()
 
@@ -276,10 +254,9 @@ class VeredictoView(APIView):
         })
 
     def post(self, request, ponencia_id):
-        """Organizador emite veredicto manual cuando lo requiere (RF-16)."""
         ponencia = get_object_or_404(Ponencia, pk=ponencia_id)
 
-        if not _es_organizador(request.user, ponencia.conferencia):
+        if not _es_organizador(request.user):
             return Response(
                 {"detail": "Solo el organizador puede emitir el veredicto."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -307,14 +284,13 @@ class VeredictoView(APIView):
             veredicto = emitir_veredicto_final(
                 ponencia, data["resultado"], revisiones_completadas
             )
-            # Aplicar campos extra del organizador si los envió
             if data.get("resumen_para_autor"):
                 veredicto.resumen_para_autor = data["resumen_para_autor"]
             if data.get("plazo_cambios"):
                 veredicto.plazo_cambios = data["plazo_cambios"]
             veredicto.save(update_fields=["resumen_para_autor", "plazo_cambios"])
         except ValidationError as e:
-            return Response({"detail": str(e.message)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
             VeredictoParaAutorSerializer(veredicto).data,

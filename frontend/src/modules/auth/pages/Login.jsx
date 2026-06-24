@@ -9,7 +9,18 @@ function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendienteVerif, setPendienteVerif] = useState(null);
   const navigate = useNavigate();
+
+  const reenviarVerificacion = async () => {
+    if (!pendienteVerif?.email) return;
+    try {
+      await auth.reenviarVerificacion(pendienteVerif.email);
+      addToast('Enlace de verificación reenviado. Revisa tu correo.', 'success');
+    } catch {
+      addToast('Error al reenviar. Intenta más tarde.', 'error');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,6 +29,7 @@ function Login() {
       return;
     }
     setLoading(true);
+    setPendienteVerif(null);
     try {
       const data = await auth.login(email, password);
       localStorage.setItem('token', data.access);
@@ -26,7 +38,11 @@ function Login() {
       if (profileData) localStorage.setItem('profile', JSON.stringify(profileData));
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      addToast(err.message || 'Error al iniciar sesión.', 'error');
+      if (err.message?.includes('no está verificada')) {
+        setPendienteVerif({ email });
+      } else {
+        addToast(err.message || 'Error al iniciar sesión.', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -90,6 +106,18 @@ function Login() {
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {pendienteVerif && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: '8px', background: '#FEF9E7',
+                  border: '1px solid rgba(212,172,13,0.3)', fontSize: '0.85rem',
+                  color: '#7A5C00', lineHeight: 1.5,
+                }}>
+                  <strong>Cuenta no verificada.</strong> Revisa tu correo y haz clic en el enlace de confirmación.
+                  <button type="button" onClick={reenviarVerificacion}
+                    style={{ display: 'block', marginTop: '8px', background: 'none', border: 'none', color: '#9A6F00', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }}
+                  >Reenviar enlace</button>
+                </div>
+              )}
               <div>
                 <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#2C3E50', marginBottom: '6px' }}>
                   Correo Electrónico

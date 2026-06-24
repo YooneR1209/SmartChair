@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements, Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { conferencias, payments } from '../../../shared/services/api';
-import AssignReviewersModal from '../../../shared/components/AssignReviewersModal';
+import { conferencias, auth } from '../../../shared/services/api';
 import { useToast } from '../../../shared/components/ToastContext';
 import { emit } from '../../../shared/services/events';
 
@@ -33,10 +32,15 @@ function DetalleConferencia() {
   const [conf, setConf] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inscrito, setInscrito] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedPonencia, setSelectedPonencia] = useState(null);
-  const [ponencias, setPonencias] = useState([]);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [userResults, setUserResults] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserResults, setShowUserResults] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const inputRef = useRef(null);
+  const searchRef = useRef(null);
+  const debounceRef = useRef(null);
   const [participantes, setParticipantes] = useState([]);
   const profileRaw = localStorage.getItem('profile');
   const profile = profileRaw ? JSON.parse(profileRaw) : null;
@@ -92,12 +96,6 @@ function DetalleConferencia() {
           }
           if (isOrganizer) setParticipantes(partList);
         } catch { /* ignore */ }
-        if (isOrganizer) {
-          try {
-            const pons = await conferencias.listarPonencias(slug);
-            setPonencias(Array.isArray(pons) ? pons : []);
-          } catch { setPonencias([]); }
-        }
       } catch { setConf(null); }
       setLoading(false);
     };
@@ -105,18 +103,97 @@ function DetalleConferencia() {
   }, [slug]);
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) {
-      addToast('Ingresa un correo electrónico', 'warning');
+    const target = selectedUser || userSearch.trim();
+    if (!target) {
+      addToast('Busca un usuario o escribe un correo', 'warning');
       return;
     }
+    const email = typeof target === 'object' ? target.email : target;
+    if (!email || !email.includes('@')) {
+      addToast('Ingresa un correo válido', 'warning');
+      return;
+    }
+    setInviteLoading(true);
     try {
-      await conferencias.invitarRevisor(slug, inviteEmail);
+      await conferencias.invitarRevisor(slug, email);
       addToast('Invitación enviada correctamente.', 'success');
-      setInviteEmail('');
+      setSelectedUser(null);
+      setUserSearch('');
+      setUserResults([]);
     } catch (err) {
       addToast(`Error: ${err.message}`, 'error');
+    } finally {
+      setInviteLoading(false);
     }
   };
+
+  const handleUserSearch = (value) => {
+    setUserSearch(value);
+    setActiveIndex(-1);
+    if (selectedUser) setSelectedUser(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value.trim().length < 2) {
+      setUserResults([]);
+      setShowUserResults(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await auth.buscarUsuarios(value.trim());
+        const filtered = data.filter(u => u.is_active !== false && u.rol !== 'administrador');
+        setUserResults(filtered);
+        setShowUserResults(filtered.length > 0);
+      } catch {
+        setUserResults([]);
+      }
+    }, 300);
+  };
+
+  const selectUser = (u) => {
+    setSelectedUser(u);
+    setUserSearch(u.email);
+    setShowUserResults(false);
+    setActiveIndex(-1);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  const handleKeyDown = (e) => {
+    if (showUserResults && userResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIndex(i => Math.min(i + 1, userResults.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIndex(i => Math.max(i - 1, 0));
+      } else if (e.key === 'Enter' && activeIndex >= 0) {
+        e.preventDefault();
+        selectUser(userResults[activeIndex]);
+      } else if (e.key === 'Escape') {
+        setShowUserResults(false);
+        setActiveIndex(-1);
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleInvite();
+    }
+  };
+
+  const removeSelectedUser = () => {
+    setSelectedUser(null);
+    setUserSearch('');
+    setUserResults([]);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowUserResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const formatDate = (val) => {
     if (!val) return '—';
@@ -220,25 +297,105 @@ function DetalleConferencia() {
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: C.goldBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: '16px', color: C.gold }}>mail</span>
                 </div>
-                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: C.dark }}>Invitar Revisor</h3>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: C.dark }}>Invitar Participante</h3>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="correo@universidad.edu"
-                  style={{ flex: 1, height: '44px', border: '1.5px solid ' + C.border, borderRadius: '10px', padding: '0 14px', fontSize: '0.88rem', outline: 'none', background: C.bg, color: C.dark }}
-                />
-                <button onClick={handleInvite} style={{
-                  height: '44px', padding: '0 22px', background: C.dark, color: '#fff',
-                  border: 'none', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '13px',
-                  display: 'flex', alignItems: 'center', gap: '6px', transition: 'background 0.15s',
-                }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#2C3E50'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = C.dark}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>send</span>
-                  Invitar
-                </button>
+              <div ref={searchRef} style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap',
+                      width: '100%', minHeight: '44px', border: '1.5px solid ' + (showUserResults ? C.gold : C.border),
+                      borderRadius: '10px', padding: selectedUser ? '4px 8px' : '0 14px',
+                      fontSize: '0.88rem', background: C.bg, color: C.dark, boxSizing: 'border-box',
+                      transition: 'border-color 0.15s', cursor: 'text',
+                    }}
+                      onClick={() => inputRef.current?.focus()}
+                    >
+                      {selectedUser ? (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          background: C.goldBg, borderRadius: '20px', padding: '4px 8px 4px 10px',
+                          fontSize: '13px',
+                        }}>
+                          <div style={{
+                            width: '22px', height: '22px', borderRadius: '50%', background: C.goldLight,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700, fontSize: '10px', color: '#fff', flexShrink: 0,
+                          }}>
+                            {selectedUser.nombre_completo?.[0]?.toUpperCase()}
+                          </div>
+                          <span style={{ fontWeight: 600, color: C.dark }}>{selectedUser.nombre_completo}</span>
+                          <button onClick={(e) => { e.stopPropagation(); removeSelectedUser(); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, padding: 0, display: 'flex' }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
+                          </button>
+                        </div>
+                      ) : null}
+                      <input
+                        ref={inputRef}
+                        type="text" value={selectedUser ? '' : userSearch}
+                        onChange={(e) => handleUserSearch(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={selectedUser ? '' : 'Nombre o correo del revisor...'}
+                        onFocus={() => { if (userResults.length > 0) setShowUserResults(true); }}
+                        style={{
+                          flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                          fontSize: '0.88rem', color: C.dark, padding: selectedUser ? '4px 0' : '0',
+                          minWidth: '80px', height: selectedUser ? '30px' : '44px',
+                        }}
+                      />
+                    </div>
+                    {showUserResults && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                        background: '#fff', border: '1px solid ' + C.border, borderRadius: '10px',
+                        marginTop: '4px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: '240px', overflowY: 'auto',
+                      }}>
+                        {userResults.map((u, idx) => (
+                          <div key={u.id} onClick={() => selectUser(u)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px',
+                              cursor: 'pointer', fontSize: '13px', borderBottom: '1px solid ' + C.bg,
+                              background: idx === activeIndex ? C.goldBg : '#fff',
+                              transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={() => setActiveIndex(idx)}
+                          >
+                            <div style={{
+                              width: '32px', height: '32px', borderRadius: '50%', background: C.goldLight,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontWeight: 700, fontSize: '12px', color: '#fff', flexShrink: 0,
+                            }}>
+                              {(u.nombre_completo || u.nombres || '?')[0]?.toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, color: C.dark }}>{u.nombre_completo || u.nombres + ' ' + u.apellidos}</div>
+                              <div style={{ fontSize: '11px', color: C.textMuted }}>{u.email} · {u.rol}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {selectedUser && (
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.textMuted }}>
+                        Presiona <strong>Enter</strong> para invitar o escribe otro nombre
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={handleInvite} disabled={inviteLoading || (!selectedUser && userSearch.trim().length < 3)} style={{
+                    height: '44px', padding: '0 22px', background: C.dark, color: '#fff',
+                    border: 'none', borderRadius: '10px', fontWeight: 600, cursor: inviteLoading ? 'wait' : (selectedUser || userSearch.trim().length >= 3) ? 'pointer' : 'default', fontSize: '13px',
+                    display: 'flex', alignItems: 'center', gap: '6px', opacity: inviteLoading ? 0.6 : (selectedUser || userSearch.trim().length >= 3) ? 1 : 0.4,
+                    transition: 'background 0.15s',
+                  }}
+                    onMouseEnter={(e) => { if (!inviteLoading && (selectedUser || userSearch.trim().length >= 3)) e.currentTarget.style.background = '#2C3E50'; }}
+                    onMouseLeave={(e) => { if (!inviteLoading) e.currentTarget.style.background = C.dark; }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>send</span>
+                    {inviteLoading ? 'Enviando...' : 'Invitar'}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -277,57 +434,6 @@ function DetalleConferencia() {
                 </div>
               )}
             </div>
-
-            <div style={{ background: '#fff', border: '1px solid ' + C.border, borderRadius: '14px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(21,101,192,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: C.blue }}>description</span>
-                </div>
-                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: C.dark }}>Postulaciones ({ponencias.length})</h3>
-              </div>
-              {ponencias.length === 0 ? (
-                <p style={{ fontSize: '13px', color: C.textMuted, margin: 0, textAlign: 'center', padding: '12px' }}>No hay postulaciones aún.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-                  {ponencias.map((p) => {
-                    const est = p.estado || 'postulada';
-                    const estColor = est === 'aceptada' || est === 'completada' ? C.green : est === 'rechazada' ? C.red : est === 'aceptada_con_cambios' ? C.gold : C.blue;
-                    const estBg = est === 'aceptada' || est === 'completada' ? 'rgba(30,132,73,0.1)' : est === 'rechazada' ? 'rgba(192,57,43,0.08)' : est === 'aceptada_con_cambios' ? C.goldBg : '#E3F2FD';
-                    return (
-                      <div key={p.id} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 14px', background: C.bg, borderRadius: '10px', gap: '10px',
-                        transition: 'background 0.15s',
-                      }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#EEF0F2'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = C.bg}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: C.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.titulo}</div>
-                          <div style={{ fontSize: '11px', color: C.textMuted }}>{p.area_tematica}</div>
-                        </div>
-                        <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '10px', fontWeight: 700, background: estBg, color: estColor, whiteSpace: 'nowrap' }}>
-                          {est.replace(/_/g, ' ')}
-                        </span>
-                        <button onClick={() => { setSelectedPonencia(p); setShowAssignModal(true); }}
-                          style={{
-                            padding: '6px 12px', background: C.dark, color: '#fff', border: 'none',
-                            borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
-                            whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px',
-                            transition: 'background 0.15s',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#2C3E50'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = C.dark}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>manage_accounts</span>
-                          Gestionar
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
             </>
           )}
 
@@ -359,23 +465,8 @@ function DetalleConferencia() {
               </button>
             )}
           </div>
-        </div>
       </div>
-
-      {showAssignModal && selectedPonencia && (
-        <AssignReviewersModal
-          isOpen={showAssignModal}
-          onClose={() => { setShowAssignModal(false); setSelectedPonencia(null); }}
-          ponencia={selectedPonencia}
-          conferenceSlug={slug}
-          onAssigned={() => {
-            setShowAssignModal(false);
-            setSelectedPonencia(null);
-            conferencias.listarPonencias(slug).then(d => setPonencias(Array.isArray(d) ? d : [])).catch(() => {});
-          }}
-        />
-      )}
-
+    </div>
       {showRegModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,

@@ -6,9 +6,19 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from .models import EmailLog
+from .models import EmailLog, Notificacion
 
 logger = logging.getLogger(__name__)
+
+
+def crear_notificacion(usuario, tipo, titulo, mensaje='', link=''):
+    return Notificacion.objects.create(
+        usuario=usuario,
+        tipo=tipo,
+        titulo=titulo,
+        mensaje=mensaje,
+        link=link,
+    )
 
 def _nombre_visible(user):
     """Obtiene el nombre usando los campos reales de tu modelo: nombres y apellidos."""

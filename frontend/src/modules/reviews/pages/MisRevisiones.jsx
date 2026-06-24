@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { reviews } from '../../../shared/services/api';
+import { reviews, getAuthHeaders } from '../../../shared/services/api';
 import { useToast } from '../../../shared/components/ToastContext';
 import { emit } from '../../../shared/services/events';
 
@@ -28,6 +28,21 @@ function MisRevisiones() {
   const { addToast } = useToast();
   const [asignaciones, setAsignaciones] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const abrirPDF = async (url) => {
+    const w = window.open('', '_blank');
+    if (!w) { addToast('Permite ventanas emergentes para ver el PDF.', 'warning'); return; }
+    w.document.write('<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#888;">Cargando PDF...</div>');
+    try {
+      const resp = await fetch(url, { headers: getAuthHeaders() });
+      if (!resp.ok) throw new Error();
+      const blob = await resp.blob();
+      w.location.href = URL.createObjectURL(blob);
+    } catch {
+      w.close();
+      addToast('No se pudo abrir el PDF.', 'error');
+    }
+  };
   const [selectedReview, setSelectedReview] = useState(null);
   const [reviewMode, setReviewMode] = useState(null);
   const [form, setForm] = useState({ veredicto: '', comentario_autor: '', comentario_privado: '', respuestas_rubrica: {} });
@@ -89,6 +104,13 @@ function MisRevisiones() {
 
   const pendientes = asignaciones.filter((r) => r.estado_revision !== 'completada').length;
   const completadas = asignaciones.filter((r) => r.estado_revision === 'completada').length;
+  const sortedAsignaciones = [...asignaciones].sort((a, b) => {
+    const aPend = (a.estado_revision || '') !== 'completada';
+    const bPend = (b.estado_revision || '') !== 'completada';
+    if (aPend && !bPend) return -1;
+    if (!aPend && bPend) return 1;
+    return 0;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -140,7 +162,7 @@ function MisRevisiones() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {asignaciones.map((rev) => (
+            {sortedAsignaciones.map((rev) => (
               <div key={rev.id} style={{
                 background: '#fff', border: '1px solid ' + C.border, borderRadius: '14px',
                 padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -302,10 +324,10 @@ function MisRevisiones() {
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: C.textMuted }}>Documento</span>
                         <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span className="material-symbols-outlined" style={{ fontSize: '18px', color: C.red }}>picture_as_pdf</span>
-                          <a href={selectedReview.archivo} target="_blank" rel="noopener noreferrer"
+                          <span onClick={() => abrirPDF(selectedReview.archivo)}
                             style={{ fontSize: '0.85rem', color: C.gold, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
                             Ver PDF
-                          </a>
+                          </span>
                         </div>
                       </div>
                     )}

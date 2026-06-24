@@ -1,0 +1,12 @@
+{% extends "emails/base.html" %}
+
+{% block title %}Confirma tu correo - SmartChair{% endblock %}
+
+{% block content %}
+  <p>Hola <strong>{{ display_name }}</strong>,</p>
+  <p>Gracias por registrarte en SmartChair. Usa el siguiente código para activar tu cuenta:</p>
+  <div style="font-size: 32px; font-weight: 800; letter-spacing: 8px; text-align: center; padding: 20px; margin: 20px 0; background: #f4f4f4; border-radius: 8px; color: #1f4e79;">{{ codigo }}</div>
+  <p>Si prefieres, también puedes hacer clic en este enlace:</p>
+  <a class="btn" href="{{ link }}">Confirmar mi correo</a>
+  <p style="margin-top: 24px; font-size: 13px; color: #7F8C8D;">Este código expira en 24 horas. Si no creaste esta cuenta, ignora este mensaje.</p>
+{% endblock %}

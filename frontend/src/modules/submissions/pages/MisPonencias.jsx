@@ -12,13 +12,13 @@ function MisPonencias() {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [list, setList] = useState([]);
-  const [confOptions, setConfOptions] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
-  const [filterConf, setFilterConf] = useState('');
+
   const [filterArea, setFilterArea] = useState('');
   const [page, setPage] = useState(1);
 
@@ -32,21 +32,18 @@ function MisPonencias() {
 
   const load = async () => {
     try {
-      const [subData, confData] = await Promise.all([
-        postulaciones.misPostulaciones().catch(() => []),
-        conferencias.listar().catch(() => []),
-      ]);
+      const subData = await postulaciones.misPostulaciones().catch(() => []);
       setList(Array.isArray(subData) ? subData : []);
-      setConfOptions(Array.isArray(confData) ? confData : []);
     } catch { setList([]); }
     finally { setLoading(false); }
   };
 
   useEffect(() => {
     load();
+    const interval = setInterval(load, 15000);
     const unsub1 = on('ponencia:actualizada', load);
     const unsub2 = on('review:completada', load);
-    return () => { unsub1(); unsub2(); };
+    return () => { clearInterval(interval); unsub1(); unsub2(); };
   }, []);
 
   const uniqueAreas = [...new Set(list.map((s) => s.area_tematica).filter(Boolean))];
@@ -58,7 +55,6 @@ function MisPonencias() {
       const normalizedItem = normalizeStatus(s.estado);
       if (normalizedItem !== normalizedFilter) return false;
     }
-    if (filterConf && s.conferencia_nombre !== filterConf) return false;
     if (filterArea && s.area_tematica !== filterArea) return false;
     return true;
   });
@@ -196,27 +192,6 @@ function MisPonencias() {
         </select>
 
         <select
-          value={filterConf}
-          onChange={(e) => { setFilterConf(e.target.value); setPage(1); }}
-          style={{
-            padding: '8px 12px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            outline: 'none',
-            cursor: 'pointer',
-            background: '#FFFFFF',
-            border: '1px solid #E5E8EB',
-            color: '#2C3E50',
-            minWidth: '160px',
-          }}
-        >
-          <option value="">Todas las conf.</option>
-          {confOptions.map((c) => (
-            <option key={c.slug || c.id} value={c.nombre}>{c.nombre}</option>
-          ))}
-        </select>
-
-        <select
           value={filterArea}
           onChange={(e) => { setFilterArea(e.target.value); setPage(1); }}
           style={{
@@ -336,7 +311,7 @@ function MisPonencias() {
                         Pagado
                       </span>
                     )}
-                    {sub.pago_confirmado === false && sub.conferencia_es_de_pago && (
+                    {sub.pago_confirmado === false && (
                       <span
                         style={{
                           fontSize: '11px',
@@ -353,11 +328,6 @@ function MisPonencias() {
                       >
                         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>hourglass_empty</span>
                         Pago Pendiente
-                      </span>
-                    )}
-                    {sub.conferencia_nombre && (
-                      <span style={{ fontSize: '11px', fontWeight: 500, color: '#9CA3AF', marginLeft: 'auto' }}>
-                        {sub.conferencia_nombre}
                       </span>
                     )}
                   </div>

@@ -1,6 +1,29 @@
 from django.db import models
+from django.conf import settings
 
-# Create your models here.
+
+class Notificacion(models.Model):
+    class Meta:
+        ordering = ['-creado_en']
+        verbose_name = 'Notificación'
+        verbose_name_plural = 'Notificaciones'
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notificaciones',
+    )
+    tipo = models.CharField(max_length=50, db_index=True)
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField(blank=True)
+    link = models.CharField(max_length=500, blank=True,
+                            help_text='URL relativa para accion')
+    leida = models.BooleanField(default=False, db_index=True)
+    creado_en = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def __str__(self):
+        return f'[{self.tipo}] {self.titulo} -> {self.usuario.email}'
+
 
 class EmailLog(models.Model):
     class TipoEmail(models.TextChoices):
@@ -11,6 +34,7 @@ class EmailLog(models.Model):
         CAMBIO_FECHA = "cambio_fecha", "Cambio de fecha"
         PAPER_REENVIADO = "paper_reenviado", "Paper reenviado a revision"
         INVITACION_REVISOR = "invitacion_revisor", "Invitacion a revisor"
+        VERIFICACION = "verificacion", "Verificacion de correo"
 
     class Estado(models.TextChoices):
         ENVIADO = "enviado", "Enviado"

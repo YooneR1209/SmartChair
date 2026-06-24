@@ -13,13 +13,10 @@ def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
     RF-13: asigna un revisor a una ponencia.
     Valida que no exceda el máximo y que el revisor no sea el autor.
     """
-    if not ponencia.conferencia:
-        raise ValidationError("La ponencia debe estar asociada a una conferencia para asignar revisores.")
-
     if revisor == ponencia.autor_principal:
         raise ValidationError("El revisor no puede ser el autor de la ponencia.")
 
-    max_rev = ponencia.conferencia.max_revisores
+    max_rev = ponencia.conferencia.max_revisores if ponencia.conferencia else 5
     actuales = AsignacionRevisor.objects.filter(ponencia=ponencia, activo=True).count()
 
     if actuales >= max_rev:
@@ -44,11 +41,12 @@ def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
         except (ValidationError, PermissionDenied):
             pass
 
-    try:
-        from apps.notifications.services import enviar_asignacion_revisor
-        enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
-    except Exception:
-        pass
+    if ponencia.conferencia:
+        try:
+            from apps.notifications.services import enviar_asignacion_revisor
+            enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
+        except Exception:
+            pass
 
     return asignacion
 
@@ -116,9 +114,7 @@ def asignar_revisores_automatico(ponencia):
     coincida con el área temática de la ponencia.
     Si no hay por categoría, asigna cualquier revisor disponible.
     """
-    if not ponencia.conferencia:
-        raise ValidationError("La ponencia debe estar asociada a una conferencia.")
-    min_rev = ponencia.conferencia.min_revisores
+    min_rev = ponencia.conferencia.min_revisores if ponencia.conferencia else 1
     revisores = _buscar_revisores_conferencia(
         ponencia.conferencia, ponencia.area_tematica, ponencia.autor_principal
     )
@@ -144,7 +140,8 @@ def asignar_revisores_automatico(ponencia):
         )
 
     try:
-        cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION, usuario=ponencia.conferencia.organizador)
+        cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION,
+                       usuario=ponencia.conferencia.organizador if ponencia.conferencia else None)
     except (ValidationError, PermissionDenied):
         pass
     return asignados
@@ -230,7 +227,7 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
 
     veredicto = Veredicto.objects.create(
         ponencia=ponencia,
-        emitido_por=ponencia.conferencia.organizador,
+        emitido_por=ponencia.conferencia.organizador if ponencia.conferencia else None,
         resultado=resultado,
         resumen_para_autor=" | ".join(feedback_anonimo),
     )
@@ -244,7 +241,7 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
     cambiar_estado(
         ponencia,
         mapa_estado[resultado],
-        usuario=ponencia.conferencia.organizador,
+        usuario=ponencia.conferencia.organizador if ponencia.conferencia else None,
     )
 
     # Reembolso automático si es rechazada (RF-09)

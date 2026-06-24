@@ -1,5 +1,4 @@
-const BASE_URL = '__API_BASE_URL__';
-const API_URL = BASE_URL && BASE_URL !== '__API_BASE_URL__' ? `${BASE_URL}/api` : '/api';
+const API_URL = '__API_BASE_URL__/api';
 
 export function getToken() {
   return localStorage.getItem('token');

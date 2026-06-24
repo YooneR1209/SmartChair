@@ -1,7 +1,11 @@
+import mimetypes
+import os
+
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 
 from apps.conferences.models import Conferencia, ConferenciaUsuario
@@ -189,6 +193,29 @@ class EnviarCambiosView(APIView):
         return Response(PonenciaDetailSerializer(ponencia).data)
 
 
+class DescargarArchivoView(APIView):
+    """
+    GET — sirve el archivo PDF de una ponencia con verificación de permisos.
+    """
+    permission_classes = [IsAuthenticated, PuedeVerPonencia]
+
+    def get(self, request, pk):
+        ponencia = get_object_or_404(Ponencia.objects.select_related('conferencia'), pk=pk)
+        self.check_object_permissions(request, ponencia)
+
+        if not ponencia.archivo:
+            return Response({'error': 'La ponencia no tiene archivo.'}, status=status.HTTP_404_NOT_FOUND)
+
+        archivo_path = ponencia.archivo.path
+        if not os.path.exists(archivo_path):
+            return Response({'error': 'El archivo no existe en el servidor.'}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = os.path.basename(ponencia.archivo.name)
+        response = FileResponse(open(archivo_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+
 class MisPostulacionesView(APIView):
     """
     GET — devuelve todas las ponencias del usuario autenticado.
@@ -212,7 +239,7 @@ class MisPostulacionesView(APIView):
                 'actualizado_en': p.actualizado_en,
                 'conferencia_nombre': p.conferencia.nombre if p.conferencia else None,
                 'conferencia_slug': p.conferencia.slug if p.conferencia else None,
-                'archivo_url': p.archivo.url if p.archivo else None,
+                'archivo_url': f'/api/conferencias/ponencias/{p.id}/descargar/' if p.archivo else None,
                 'autor_nombre': p.autor_principal.nombre_completo,
             })
         return Response(data)

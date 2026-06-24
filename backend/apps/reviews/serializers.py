@@ -23,9 +23,13 @@ class RevisionParaRevisorSerializer(serializers.ModelSerializer):
     area_tematica = serializers.CharField(
         source="asignacion.ponencia.area_tematica", read_only=True
     )
-    archivo = serializers.FileField(
-        source="asignacion.ponencia.archivo", read_only=True
-    )
+    archivo = serializers.SerializerMethodField()
+
+    def get_archivo(self, obj):
+        ponencia = obj.asignacion.ponencia
+        if ponencia and ponencia.archivo:
+            return f"/api/conferencias/ponencias/{ponencia.id}/descargar/"
+        return None
     # autor, autor_email, autores_adicionales → NUNCA se exponen aquí
 
     class Meta:
@@ -66,9 +70,11 @@ class MiAsignacionSerializer(serializers.ModelSerializer):
     titulo = serializers.CharField(source="ponencia.titulo", read_only=True)
     resumen = serializers.CharField(source="ponencia.resumen", read_only=True)
     area_tematica = serializers.CharField(source="ponencia.area_tematica", read_only=True)
-    conferencia = serializers.CharField(
-        source="ponencia.conferencia.nombre", read_only=True
-    )
+    conferencia = serializers.SerializerMethodField()
+
+    def get_conferencia(self, obj):
+        conf = obj.ponencia.conferencia
+        return conf.nombre if conf else None
     revision_id = serializers.SerializerMethodField()
     estado_revision = serializers.SerializerMethodField()
     veredicto = serializers.SerializerMethodField()
@@ -123,7 +129,7 @@ class MiAsignacionSerializer(serializers.ModelSerializer):
     def get_archivo(self, obj):
         rev = self.get_revision(obj)
         if rev and rev.asignacion.ponencia.archivo:
-            return rev.asignacion.ponencia.archivo.url
+            return f"/api/conferencias/ponencias/{rev.asignacion.ponencia_id}/descargar/"
         return None
 
 

@@ -1,14 +1,11 @@
 from django.urls import path
 from .views import (
-    PonenciaListCreateView, PonenciaCreateView, PonenciaDetailView,
+    PonenciaListCreateView, PonenciaDetailView,
     CambiarEstadoView, ConfirmarPagoView, EnviarCambiosView,
 )
 from .certificate_views import CertificadoListView, CertificadoDescargarView
 
 urlpatterns = [
-    # Creación sin conferencia
-    path('ponencias/',                                PonenciaCreateView.as_view(),     name='ponencia-create'),
-
     # Listado y creación agrupados por conferencia
     path('<slug:slug>/ponencias/',                    PonenciaListCreateView.as_view(), name='ponencia-list'),
 

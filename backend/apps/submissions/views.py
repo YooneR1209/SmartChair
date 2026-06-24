@@ -1,7 +1,11 @@
+import mimetypes
+import os
+
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 
 from apps.conferences.models import Conferencia, ConferenciaUsuario
@@ -41,15 +45,18 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
         conferencia = self.get_conferencia()
         qs          = Ponencia.objects.filter(conferencia=conferencia).select_related('autor_principal')
 
-        if user.rol in ('administrador', 'organizador'):
-            return qs
-        if conferencia.organizador == user:
-            return qs
-        if ConferenciaUsuario.objects.filter(
-            conferencia=conferencia, usuario=user,
-            rol__in=('organizador', 'revisor'), activo=True,
-        ).exists():
-            return qs
+        es_org = (user.rol == 'organizador' or
+                  (conferencia and conferencia.organizador == user) or
+                  ConferenciaUsuario.objects.filter(
+                      conferencia=conferencia, usuario=user,
+                      rol__in=('organizador', 'revisor'), activo=True,
+                  ).exists())
+
+        if user.rol == 'administrador' or es_org:
+            from django.db.models import Q
+            return Ponencia.objects.filter(
+                Q(conferencia=conferencia) | Q(conferencia__isnull=True)
+            ).select_related('autor_principal')
         # Los autores solo ven sus propias ponencias
         return qs.filter(autor_principal=user)
 
@@ -62,13 +69,37 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
         respuestas = request.data.getlist('respuestas', [])
 
         ponencia = services.postular_ponencia(
+            autor=request.user,
+            datos=datos,
             conferencia=conferencia,
+            respuestas=respuestas if isinstance(respuestas, list) else [],
+        )
+        return Response(
+            PonenciaDetailSerializer(ponencia, context=self.get_serializer_context()).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PonenciaCreateView(APIView):
+    """
+    POST — crea una ponencia sin asociar a ninguna conferencia.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PonenciaDetailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        datos = {**serializer.validated_data, 'archivo': request.FILES.get('archivo')}
+        respuestas = request.data.getlist('respuestas', [])
+
+        ponencia = services.postular_ponencia(
             autor=request.user,
             datos=datos,
             respuestas=respuestas if isinstance(respuestas, list) else [],
         )
         return Response(
-            PonenciaDetailSerializer(ponencia, context=self.get_serializer_context()).data,
+            PonenciaDetailSerializer(ponencia).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -170,6 +201,29 @@ class EnviarCambiosView(APIView):
         return Response(PonenciaDetailSerializer(ponencia).data)
 
 
+class DescargarArchivoView(APIView):
+    """
+    GET — sirve el archivo PDF de una ponencia con verificación de permisos.
+    """
+    permission_classes = [IsAuthenticated, PuedeVerPonencia]
+
+    def get(self, request, pk):
+        ponencia = get_object_or_404(Ponencia.objects.select_related('conferencia'), pk=pk)
+        self.check_object_permissions(request, ponencia)
+
+        if not ponencia.archivo:
+            return Response({'error': 'La ponencia no tiene archivo.'}, status=status.HTTP_404_NOT_FOUND)
+
+        archivo_path = ponencia.archivo.path
+        if not os.path.exists(archivo_path):
+            return Response({'error': 'El archivo no existe en el servidor.'}, status=status.HTTP_404_NOT_FOUND)
+
+        filename = os.path.basename(ponencia.archivo.name)
+        response = FileResponse(open(archivo_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+
+
 class MisPostulacionesView(APIView):
     """
     GET — devuelve todas las ponencias del usuario autenticado.
@@ -191,10 +245,10 @@ class MisPostulacionesView(APIView):
                 'pago_confirmado': p.pago_confirmado,
                 'postulada_en': p.postulada_en,
                 'actualizado_en': p.actualizado_en,
-                'conferencia_nombre': p.conferencia.nombre,
-                'conferencia_slug': p.conferencia.slug,
-                'conferencia_es_de_pago': p.conferencia.es_de_pago,
-                'archivo_url': p.archivo.url if p.archivo else None,
+                'conferencia_nombre': p.conferencia.nombre if p.conferencia else None,
+                'conferencia_slug': p.conferencia.slug if p.conferencia else None,
+                'conferencia_es_de_pago': p.conferencia.es_de_pago if p.conferencia else False,
+                'archivo_url': f'/api/conferencias/ponencias/{p.id}/descargar/' if p.archivo else None,
                 'autor_nombre': p.autor_principal.nombre_completo,
             })
         return Response(data)

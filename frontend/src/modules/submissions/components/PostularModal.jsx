@@ -3,7 +3,7 @@ import { useToast } from '../../../shared/components/ToastContext';
 import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements, Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = '__API_BASE_URL__/api';
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 const stripeKeyValid = STRIPE_KEY && STRIPE_KEY !== 'pk_test_placeholder' && STRIPE_KEY.startsWith('pk_');
 const stripePromise = stripeKeyValid ? loadStripe(STRIPE_KEY) : null;
@@ -54,8 +54,7 @@ const labelStyle = { color: '#1A1A2E', fontSize: '13px', fontWeight: 700, margin
 
 function PostularModal({ isOpen, onClose, onSuccess }) {
   const { addToast } = useToast();
-  const [conferenciaSlug, setConferenciaSlug] = useState('');
-  const [conferenciaDetalle, setConferenciaDetalle] = useState(null);
+  const getToken = useCallback(() => localStorage.getItem('token'), []);
   const [titulo, setTitulo] = useState('');
   const [resumen, setResumen] = useState('');
   const [areaTematica, setAreaTematica] = useState('');
@@ -70,7 +69,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
   const [clientSecret, setClientSecret] = useState('');
   const [fieldErrors, setFieldErrors] = useState([]);
   const [exito, setExito] = useState(false);
-  const [cargandoConfs, setCargandoConfs] = useState(true);
   const [focusedField, setFocusedField] = useState(null);
   const [areaOpen, setAreaOpen] = useState(false);
   const areaRef = useRef(null);
@@ -84,42 +82,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [areaOpen]);
 
-  const getToken = useCallback(() => localStorage.getItem('token'), []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setCargandoConfs(true);
-    fetch(`${API_URL}/conferencias/`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const lista = Array.isArray(data)
-          ? data.filter((c) => c.estado === 'abierta' || c.estado === 'activa')
-          : data.results
-            ? data.results.filter((c) => c.estado === 'abierta' || c.estado === 'activa')
-            : [];
-        if (lista.length > 0) {
-          setConferenciaSlug(lista[0].slug || lista[0].id);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCargandoConfs(false));
-  }, [isOpen, getToken]);
-
-  useEffect(() => {
-    if (!conferenciaSlug) {
-      setConferenciaDetalle(null);
-      return;
-    }
-    fetch(`${API_URL}/conferencias/${conferenciaSlug}/`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
-      .then((r) => r.json())
-      .then((data) => setConferenciaDetalle(data))
-      .catch(() => setConferenciaDetalle(null));
-  }, [conferenciaSlug, getToken]);
-
   useEffect(() => {
     if (!isOpen) {
       setTitulo('');
@@ -130,8 +92,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
       setError('');
       setFieldErrors([]);
       setExito(false);
-      setConferenciaSlug('');
-      setConferenciaDetalle(null);
     }
   }, [isOpen]);
 
@@ -152,7 +112,6 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
   };
 
   const validar = () => {
-    if (!conferenciaSlug) return 'No hay conferencias activas disponibles.';
     if (!titulo.trim()) return 'El título es obligatorio.';
     if (!resumen.trim()) return 'El resumen es obligatorio.';
     const palabras = resumen.trim().split(/\s+/);
@@ -179,7 +138,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
       if (coautores.length > 0) {
         formData.append('autores', JSON.stringify(coautores.filter((c) => c.nombre.trim())));
       }
-      const res = await fetch(`${API_URL}/conferencias/${conferenciaSlug}/ponencias/`, {
+      const res = await fetch(`${API_URL}/conferencias/ponencias/`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${getToken()}` },
         body: formData,
@@ -262,17 +221,7 @@ function PostularModal({ isOpen, onClose, onSuccess }) {
           <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>close</span>
         </button>
 
-        {cargandoConfs ? (
-          <div className="flex flex-col items-center justify-center" style={{ padding: '80px 24px' }}>
-            <div
-              style={{
-                width: 40, height: 40, border: '3px solid #E5E8EB', borderTopColor: '#D4AC0D',
-                borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-              }}
-            />
-            <p style={{ marginTop: 16, fontSize: 14, color: '#5D6D7E' }}>Cargando...</p>
-          </div>
-        ) : exito ? (
+        {exito ? (
           <div className="text-center" style={{ padding: '40px 24px' }}>
             <div
               style={{

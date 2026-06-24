@@ -126,8 +126,8 @@ class AdminPostulacionesView(APIView):
             data.append({
                 'id': p.id,
                 'titulo': p.titulo,
-                'conferencia': p.conferencia.nombre,
-                'conferencia_slug': p.conferencia.slug,
+                'conferencia': p.conferencia.nombre if p.conferencia else None,
+                'conferencia_slug': p.conferencia.slug if p.conferencia else None,
                 'autor': p.autor_principal.nombre_completo,
                 'autor_email': p.autor_principal.email,
                 'area_tematica': p.area_tematica,

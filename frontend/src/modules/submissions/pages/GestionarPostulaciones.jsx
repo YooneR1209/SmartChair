@@ -55,18 +55,17 @@ function GestionarPostulaciones() {
 
   useEffect(() => {
     if (!selectedConf) { setPonencias([]); return; }
+    let active = true;
     const load = async () => {
-      setLoadingPon(true);
       try {
         const data = await conferencias.listarPonencias(selectedConf.slug);
-        setPonencias(Array.isArray(data) ? data : []);
-      } catch { setPonencias([]); }
-      setLoadingPon(false);
+        if (active) setPonencias(Array.isArray(data) ? data : []);
+      } catch { if (active) setPonencias([]); }
     };
     load();
     const interval = setInterval(load, 15000);
     const unsub = on('review:completada', load);
-    return () => { clearInterval(interval); unsub(); };
+    return () => { active = false; clearInterval(interval); unsub(); };
   }, [selectedConf]);
 
   const filtered = ponencias.filter(p =>

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     ConferenciaListCreateView, ConferenciaDetailView,
     ConferenciaDesdeTemplateView, ParticipantesView,
@@ -8,6 +8,7 @@ from .views import (
 
 urlpatterns = [
     path('',                              ConferenciaListCreateView.as_view(),  name='conferencia-list'),
+    path('ponencias/',                    include('apps.submissions.ponencias_urls')),
     path('<slug:slug>/',                  ConferenciaDetailView.as_view(),      name='conferencia-detail'),
     path('<slug:slug>/desde-plantilla/',  ConferenciaDesdeTemplateView.as_view(), name='conferencia-desde-plantilla'),
     path('<slug:slug>/participantes/',    ParticipantesView.as_view(),          name='conferencia-participantes'),

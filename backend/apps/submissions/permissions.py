@@ -16,7 +16,7 @@ class EsOrganizadorDeLaConferencia(BasePermission):
         user = request.user
         if user.rol == 'administrador' or user.rol == 'organizador':
             return True
-        return obj.conferencia.organizador == user
+        return obj.conferencia and obj.conferencia.organizador == user
 
 
 class PuedeEliminarPonencia(BasePermission):
@@ -49,8 +49,11 @@ class PuedeVerPonencia(BasePermission):
         if obj.autor_principal == user:
             return True
 
-        if obj.conferencia.organizador == user:
+        if obj.conferencia and obj.conferencia.organizador == user:
             return True
+
+        if not obj.conferencia:
+            return False
 
         return ConferenciaUsuario.objects.filter(
             conferencia=obj.conferencia,

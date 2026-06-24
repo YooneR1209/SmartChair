@@ -15,7 +15,9 @@ class Ponencia(models.Model):
     # ── Relaciones ────────────────────────────────────────────────────────────
     conferencia = models.ForeignKey(
         'conferences.Conferencia',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='ponencias',
     )
     autor_principal = models.ForeignKey(

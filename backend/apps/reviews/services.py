@@ -1,6 +1,7 @@
 # apps/reviews/services.py
 
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.db import transaction
 from django.utils import timezone
 
 from .models import AsignacionRevisor, Revision, Veredicto
@@ -16,7 +17,7 @@ def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
     if revisor == ponencia.autor_principal:
         raise ValidationError("El revisor no puede ser el autor de la ponencia.")
 
-    max_rev = ponencia.conferencia.max_revisores
+    max_rev = ponencia.conferencia.max_revisores if ponencia.conferencia else 5
     actuales = AsignacionRevisor.objects.filter(ponencia=ponencia, activo=True).count()
 
     if actuales >= max_rev:
@@ -41,11 +42,12 @@ def asignar_revisor(ponencia, revisor, es_desempate=False, usuario=None):
         except (ValidationError, PermissionDenied):
             pass
 
-    try:
-        from apps.notifications.services import enviar_asignacion_revisor
-        enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
-    except Exception:
-        pass
+    if ponencia.conferencia:
+        try:
+            from apps.notifications.services import enviar_asignacion_revisor
+            enviar_asignacion_revisor(revisor, ponencia.conferencia, ponencia)
+        except Exception:
+            pass
 
     return asignacion
 
@@ -113,7 +115,7 @@ def asignar_revisores_automatico(ponencia):
     coincida con el área temática de la ponencia.
     Si no hay por categoría, asigna cualquier revisor disponible.
     """
-    min_rev = ponencia.conferencia.min_revisores
+    min_rev = ponencia.conferencia.min_revisores if ponencia.conferencia else 1
     revisores = _buscar_revisores_conferencia(
         ponencia.conferencia, ponencia.area_tematica, ponencia.autor_principal
     )
@@ -139,7 +141,8 @@ def asignar_revisores_automatico(ponencia):
         )
 
     try:
-        cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION, usuario=ponencia.conferencia.organizador)
+        cambiar_estado(ponencia, Ponencia.Estado.EN_REVISION,
+                       usuario=ponencia.conferencia.organizador if ponencia.conferencia else None)
     except (ValidationError, PermissionDenied):
         pass
     return asignados
@@ -156,11 +159,12 @@ def completar_revision(
     revision.comentario_autor = comentario_autor
     revision.comentario_privado = comentario_privado
     revision.respuestas_rubrica = respuestas_rubrica
-    revision.estado = Revision.Estado.COMPLETADA
-    revision.completada_en = timezone.now()
-    revision.save()
+    with transaction.atomic():
+        revision.estado = Revision.Estado.COMPLETADA
+        revision.completada_en = timezone.now()
+        revision.save()
 
-    verificar_y_emitir_veredicto(revision.asignacion.ponencia)
+        verificar_y_emitir_veredicto(revision.asignacion.ponencia)
     return revision
 
 
@@ -192,26 +196,38 @@ def verificar_y_emitir_veredicto(ponencia):
 def _asignar_revisor_desempate(ponencia):
     """RF-14: busca y asigna un tercer revisor para romper el empate."""
     from apps.conferences.models import ConferenciaUsuario
+    from django.contrib.auth import get_user_model
 
     ya_asignados = AsignacionRevisor.objects.filter(
         ponencia=ponencia
     ).values_list("revisor_id", flat=True)
 
-    candidato = (
-        ConferenciaUsuario.objects.filter(
-            conferencia=ponencia.conferencia,
-            rol="revisor",
-            activo=True,
+    if ponencia.conferencia:
+        candidato = (
+            ConferenciaUsuario.objects.filter(
+                conferencia=ponencia.conferencia,
+                rol="revisor",
+                activo=True,
+            )
+            .exclude(usuario_id__in=ya_asignados)
+            .exclude(usuario=ponencia.autor_principal)
+            .first()
         )
-        .exclude(usuario_id__in=ya_asignados)
-        .exclude(usuario=ponencia.autor_principal)
-        .first()
-    )
+        if candidato:
+            asignar_revisor(ponencia, candidato.usuario, es_desempate=True)
+            return
+    else:
+        candidato = (
+            get_user_model().objects.filter(rol="revisor", is_active=True)
+            .exclude(id__in=ya_asignados)
+            .exclude(id=ponencia.autor_principal_id)
+            .first()
+        )
+        if candidato:
+            asignar_revisor(ponencia, candidato, es_desempate=True)
+            return
 
-    if not candidato:
-        raise ValidationError("No hay revisores disponibles para el desempate.")
-
-    asignar_revisor(ponencia, candidato.usuario, es_desempate=True)
+    raise ValidationError("No hay revisores disponibles para el desempate.")
 
 
 def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
@@ -225,7 +241,7 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
 
     veredicto = Veredicto.objects.create(
         ponencia=ponencia,
-        emitido_por=ponencia.conferencia.organizador,
+        emitido_por=ponencia.conferencia.organizador if ponencia.conferencia else None,
         resultado=resultado,
         resumen_para_autor=" | ".join(feedback_anonimo),
     )
@@ -239,7 +255,7 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
     cambiar_estado(
         ponencia,
         mapa_estado[resultado],
-        usuario=ponencia.conferencia.organizador,
+        usuario=ponencia.conferencia.organizador if ponencia.conferencia else None,
     )
 
     # Reembolso automático si es rechazada (RF-09)

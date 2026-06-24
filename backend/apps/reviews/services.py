@@ -1,6 +1,7 @@
 # apps/reviews/services.py
 
 from django.core.exceptions import ValidationError, PermissionDenied
+from django.db import transaction
 from django.utils import timezone
 
 from .models import AsignacionRevisor, Revision, Veredicto
@@ -158,11 +159,12 @@ def completar_revision(
     revision.comentario_autor = comentario_autor
     revision.comentario_privado = comentario_privado
     revision.respuestas_rubrica = respuestas_rubrica
-    revision.estado = Revision.Estado.COMPLETADA
-    revision.completada_en = timezone.now()
-    revision.save()
+    with transaction.atomic():
+        revision.estado = Revision.Estado.COMPLETADA
+        revision.completada_en = timezone.now()
+        revision.save()
 
-    verificar_y_emitir_veredicto(revision.asignacion.ponencia)
+        verificar_y_emitir_veredicto(revision.asignacion.ponencia)
     return revision
 
 
@@ -194,26 +196,38 @@ def verificar_y_emitir_veredicto(ponencia):
 def _asignar_revisor_desempate(ponencia):
     """RF-14: busca y asigna un tercer revisor para romper el empate."""
     from apps.conferences.models import ConferenciaUsuario
+    from django.contrib.auth import get_user_model
 
     ya_asignados = AsignacionRevisor.objects.filter(
         ponencia=ponencia
     ).values_list("revisor_id", flat=True)
 
-    candidato = (
-        ConferenciaUsuario.objects.filter(
-            conferencia=ponencia.conferencia,
-            rol="revisor",
-            activo=True,
+    if ponencia.conferencia:
+        candidato = (
+            ConferenciaUsuario.objects.filter(
+                conferencia=ponencia.conferencia,
+                rol="revisor",
+                activo=True,
+            )
+            .exclude(usuario_id__in=ya_asignados)
+            .exclude(usuario=ponencia.autor_principal)
+            .first()
         )
-        .exclude(usuario_id__in=ya_asignados)
-        .exclude(usuario=ponencia.autor_principal)
-        .first()
-    )
+        if candidato:
+            asignar_revisor(ponencia, candidato.usuario, es_desempate=True)
+            return
+    else:
+        candidato = (
+            get_user_model().objects.filter(rol="revisor", is_active=True)
+            .exclude(id__in=ya_asignados)
+            .exclude(id=ponencia.autor_principal_id)
+            .first()
+        )
+        if candidato:
+            asignar_revisor(ponencia, candidato, es_desempate=True)
+            return
 
-    if not candidato:
-        raise ValidationError("No hay revisores disponibles para el desempate.")
-
-    asignar_revisor(ponencia, candidato.usuario, es_desempate=True)
+    raise ValidationError("No hay revisores disponibles para el desempate.")
 
 
 def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):

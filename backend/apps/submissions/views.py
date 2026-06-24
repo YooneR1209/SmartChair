@@ -61,13 +61,37 @@ class PonenciaListCreateView(generics.ListCreateAPIView):
         respuestas = request.data.getlist('respuestas', [])
 
         ponencia = services.postular_ponencia(
+            autor=request.user,
+            datos=datos,
             conferencia=conferencia,
+            respuestas=respuestas if isinstance(respuestas, list) else [],
+        )
+        return Response(
+            PonenciaDetailSerializer(ponencia, context=self.get_serializer_context()).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PonenciaCreateView(APIView):
+    """
+    POST — crea una ponencia sin asociar a ninguna conferencia.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PonenciaDetailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        datos = {**serializer.validated_data, 'archivo': request.FILES.get('archivo')}
+        respuestas = request.data.getlist('respuestas', [])
+
+        ponencia = services.postular_ponencia(
             autor=request.user,
             datos=datos,
             respuestas=respuestas if isinstance(respuestas, list) else [],
         )
         return Response(
-            PonenciaDetailSerializer(ponencia, context=self.get_serializer_context()).data,
+            PonenciaDetailSerializer(ponencia).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -183,8 +207,8 @@ class MisPostulacionesView(APIView):
                 'pago_confirmado': p.pago_confirmado,
                 'postulada_en': p.postulada_en,
                 'actualizado_en': p.actualizado_en,
-                'conferencia_nombre': p.conferencia.nombre,
-                'conferencia_slug': p.conferencia.slug,
+                'conferencia_nombre': p.conferencia.nombre if p.conferencia else None,
+                'conferencia_slug': p.conferencia.slug if p.conferencia else None,
                 'archivo_url': p.archivo.url if p.archivo else None,
                 'autor_nombre': p.autor_principal.nombre_completo,
             })

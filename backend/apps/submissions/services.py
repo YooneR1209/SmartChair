@@ -14,40 +14,47 @@ _TRANSICIONES_VALIDAS = {
 }
 
 
-def postular_ponencia(conferencia, autor, datos, respuestas=None):
+def postular_ponencia(autor, datos, conferencia=None, respuestas=None):
     """
-    RF-05: crea una nueva ponencia validando las reglas de la conferencia.
+    RF-05: crea una nueva ponencia. Si se proporciona conferencia, valida
+    las reglas de la misma. Si no, crea la ponencia sin asociar a ninguna.
 
     Args:
-        conferencia: instancia de Conferencia.
         autor: instancia de User (autor principal).
         datos: dict con campos de Ponencia (titulo, resumen, area_tematica, autores, archivo).
+        conferencia: instancia de Conferencia u opcional (None).
         respuestas: list de dicts {"nombre_campo": str, "valor": str} para el formulario personalizado.
 
     Returns:
         Ponencia recién creada.
     """
-    if not (autor.es_administrador or autor.es_organizador) and not conferencia.esta_abierta_postulacion():
-        raise ValidationError('La conferencia no está abierta para postulaciones.')
+    if conferencia:
+        if not (autor.es_administrador or autor.es_organizador) and not conferencia.esta_abierta_postulacion():
+            raise ValidationError('La conferencia no está abierta para postulaciones.')
+
+        archivo = datos.get('archivo')
+        if archivo and conferencia.formatos_archivo_permitidos:
+            ext = archivo.name.rsplit('.', 1)[-1].lower()
+            if ext not in conferencia.formatos_archivo_permitidos:
+                raise ValidationError(
+                    {'archivo': f'Formato .{ext} no permitido. '
+                                f'Formatos aceptados: {", ".join(conferencia.formatos_archivo_permitidos)}.'}
+                )
+
+        coautores = datos.get('autores', [])
+        total = 1 + len(coautores)
+        if total > conferencia.max_autores:
+            raise ValidationError(
+                {'autores': f'Se superó el máximo de {conferencia.max_autores} autores '
+                            f'(autor principal + {conferencia.max_autores - 1} coautores).'}
+            )
+    else:
+        archivo = datos.get('archivo')
+        if archivo and not archivo.name.lower().endswith('.pdf'):
+            raise ValidationError({'archivo': 'Solo se permiten archivos PDF.'})
 
     area_tematica = datos.get('area_tematica', '')
-
-    archivo = datos.get('archivo')
-    if archivo and conferencia.formatos_archivo_permitidos:
-        ext = archivo.name.rsplit('.', 1)[-1].lower()
-        if ext not in conferencia.formatos_archivo_permitidos:
-            raise ValidationError(
-                {'archivo': f'Formato .{ext} no permitido. '
-                            f'Formatos aceptados: {", ".join(conferencia.formatos_archivo_permitidos)}.'}
-            )
-
     coautores = datos.get('autores', [])
-    total = 1 + len(coautores)
-    if total > conferencia.max_autores:
-        raise ValidationError(
-            {'autores': f'Se superó el máximo de {conferencia.max_autores} autores '
-                        f'(autor principal + {conferencia.max_autores - 1} coautores).'}
-        )
 
     ponencia = Ponencia.objects.create(
         conferencia=conferencia,

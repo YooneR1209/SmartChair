@@ -38,7 +38,25 @@ function AssignReviewersModal({ isOpen, onClose, ponencia, conferenceSlug, onAss
 
   useEffect(() => {
     if (!isOpen || activeTab !== 'gestionar' || !ponencia) return;
-    cargarRevisiones();
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await reviews.revisionesPorPonencia(ponencia.id);
+        if (!active) return;
+        setRevisiones(Array.isArray(data) ? data : data.results || []);
+        try {
+          const v = await reviews.verVeredicto(ponencia.id);
+          if (active) setVeredicto(v);
+        } catch {
+          if (active) setVeredicto(null);
+        }
+      } catch (err) {
+        if (active) setError(err.message);
+      }
+    };
+    load();
+    const interval = setInterval(load, 10000);
+    return () => { active = false; clearInterval(interval); };
   }, [isOpen, activeTab, ponencia]);
 
   const cargarRevisores = async () => {

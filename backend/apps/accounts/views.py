@@ -63,7 +63,10 @@ class RegistroView(generics.CreateAPIView):
         if user.rol in ROL_VERIFICACION_REQUERIDA:
             user.is_active = False
             user.save(update_fields=["is_active"])
-            enviar_correo_verificacion(user)
+            try:
+                enviar_correo_verificacion(user)
+            except Exception:
+                pass
 
             resp = {
                 "detail": "Registro exitoso. Revisa tu correo para confirmar tu cuenta.",
@@ -101,7 +104,13 @@ class ReenviarVerificacionView(APIView):
             return Response({"detail": "Esta cuenta no requiere verificación."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        enviar_correo_verificacion(user)
+        try:
+            enviar_correo_verificacion(user)
+        except Exception:
+            return Response(
+                {"detail": "Error al enviar el correo. Intenta más tarde."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response({"detail": "Enlace de verificación reenviado. Revisa tu correo."})
 

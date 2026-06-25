@@ -64,16 +64,19 @@ def enviar_correo_verificacion(usuario):
             usuario.email, codigo,
         )
 
-    from apps.notifications.models import EmailLog
-    EmailLog.objects.create(
-        destinatario=usuario.email,
-        tipo=EmailLog.TipoEmail.VERIFICACION,
-        asunto=asunto,
-        estado=EmailLog.Estado.ENVIADO,
-        enviado_en=timezone.now(),
-        objeto_tipo="User",
-        objeto_id=usuario.id,
-    )
+    try:
+        from apps.notifications.models import EmailLog
+        EmailLog.objects.create(
+            destinatario=usuario.email,
+            tipo=EmailLog.TipoEmail.VERIFICACION,
+            asunto=asunto,
+            estado=EmailLog.Estado.ENVIADO,
+            enviado_en=timezone.now(),
+            objeto_tipo="User",
+            objeto_id=usuario.id,
+        )
+    except Exception:
+        logger.warning("No se pudo registrar EmailLog", exc_info=True)
 
 
 def verificar_por_codigo(email, codigo):

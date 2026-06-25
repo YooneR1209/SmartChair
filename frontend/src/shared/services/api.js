@@ -12,9 +12,10 @@ export function getAuthHeaders() {
 }
 
 async function request(endpoint, options = {}) {
+  const { noAuth, ...fetchOptions } = options;
   const url = `${API_URL}${endpoint}`;
-  const headers = { ...getAuthHeaders(), ...options.headers };
-  const config = { ...options, headers };
+  const headers = noAuth ? { ...fetchOptions.headers } : { ...getAuthHeaders(), ...fetchOptions.headers };
+  const config = { ...fetchOptions, headers };
   const response = await fetch(url, config);
   const data = await response.json().catch(() => null);
   if (!response.ok) {
@@ -30,26 +31,30 @@ export const auth = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      noAuth: true,
     }),
   registro: (data) =>
     request('/auth/registro/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+      noAuth: true,
     }),
   verificarEmail: (token) =>
-    request(`/auth/verificar/?token=${encodeURIComponent(token)}`),
+    request(`/auth/verificar/?token=${encodeURIComponent(token)}`, { noAuth: true }),
   verificarCodigo: (email, codigo) =>
     request('/auth/verificar/codigo/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, codigo }),
+      noAuth: true,
     }),
   reenviarVerificacion: (email) =>
     request('/auth/verificar/reenviar/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
+      noAuth: true,
     }),
   logout: () =>
     request('/auth/logout/', {
@@ -100,7 +105,7 @@ export const conferencias = {
     }),
   listarRevisores: (slug) => request(`/conferencias/${slug}/revisores/`),
   aceptarInvitacion: (token) =>
-    request(`/conferencias/invitaciones/${token}/aceptar/`, { method: 'POST' }),
+    request(`/conferencias/invitaciones/${token}/aceptar/`, { method: 'POST', noAuth: true }),
   listarPonencias: () => request('/conferencias/ponencias/'),
   postular: (slug, formData) =>
     request(`/conferencias/${slug}/ponencias/`, {

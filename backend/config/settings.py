@@ -223,10 +223,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Email
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
+
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "apps.core.brevo_email_backend.BrevoEmailBackend"
+elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'

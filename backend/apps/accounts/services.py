@@ -36,44 +36,51 @@ def crear_verificacion(usuario):
 
 
 def enviar_correo_verificacion(usuario):
-    token, codigo = crear_verificacion(usuario)
-    link = f"{settings.FRONTEND_URL}/verificar?token={token}"
+    try:
+        token, codigo = crear_verificacion(usuario)
+        link = f"{settings.FRONTEND_URL}/verificar?token={token}"
 
-    asunto = "Confirma tu correo electrónico - SmartChair"
-    context = {
-        "display_name": usuario.nombre_completo,
-        "codigo": codigo,
-        "link": link,
-        "frontend_url": settings.FRONTEND_URL,
-    }
-    html = render_to_string("emails/verificacion.html", context)
-    text = strip_tags(html)
+        asunto = "Confirma tu correo electrónico - SmartChair"
+        context = {
+            "display_name": usuario.nombre_completo,
+            "codigo": codigo,
+            "link": link,
+            "frontend_url": settings.FRONTEND_URL,
+        }
+        html = render_to_string("emails/verificacion.html", context)
+        text = strip_tags(html)
 
-    send_mail(
-        subject=asunto,
-        message=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[usuario.email],
-        html_message=html,
-        fail_silently=False,
-    )
-
-    if "console" in settings.EMAIL_BACKEND:
-        logger.info(
-            "📧 Código de verificación para %s → %s",
-            usuario.email, codigo,
+        send_mail(
+            subject=asunto,
+            message=text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[usuario.email],
+            html_message=html,
+            fail_silently=False,
         )
 
-    from apps.notifications.models import EmailLog
-    EmailLog.objects.create(
-        destinatario=usuario.email,
-        tipo=EmailLog.TipoEmail.VERIFICACION,
-        asunto=asunto,
-        estado=EmailLog.Estado.ENVIADO,
-        enviado_en=timezone.now(),
-        objeto_tipo="User",
-        objeto_id=usuario.id,
-    )
+        if "console" in settings.EMAIL_BACKEND:
+            logger.info(
+                "📧 Código de verificación para %s → %s",
+                usuario.email, codigo,
+            )
+
+        try:
+            from apps.notifications.models import EmailLog
+            EmailLog.objects.create(
+                destinatario=usuario.email,
+                tipo=EmailLog.TipoEmail.VERIFICACION,
+                asunto=asunto,
+                estado=EmailLog.Estado.ENVIADO,
+                enviado_en=timezone.now(),
+                objeto_tipo="User",
+                objeto_id=usuario.id,
+            )
+        except Exception:
+            logger.warning("No se pudo registrar EmailLog", exc_info=True)
+    except Exception:
+        logger.exception("Error en enviar_correo_verificacion para %s", usuario.email)
+        raise
 
 
 def verificar_por_codigo(email, codigo):

@@ -8,7 +8,11 @@ from django.conf import settings
 from django.utils import timezone
 from .models import User, VerificacionEmail
 from .serializers import RegistroSerializer, PerfilSerializer, CambiarPasswordSerializer
-from .services import enviar_correo_verificacion, verificar_por_codigo, verificar_por_token
+from .services import (
+    enviar_correo_verificacion,
+    verificar_por_codigo,
+    verificar_por_token,
+)
 
 
 ROL_VERIFICACION_REQUERIDA = {User.Rol.AUTOR, User.Rol.ORGANIZADOR, User.Rol.SUPERVISOR}
@@ -63,14 +67,16 @@ class RegistroView(generics.CreateAPIView):
         if user.rol in ROL_VERIFICACION_REQUERIDA:
             user.is_active = False
             user.save(update_fields=["is_active"])
-            enviar_correo_verificacion(user)
+            try:
+                enviar_correo_verificacion(user)
+            except Exception:
+                pass
 
-            resp = {
+            return Response({
                 "detail": "Registro exitoso. Revisa tu correo para confirmar tu cuenta.",
                 "pendiente_verificacion": True,
                 "email": user.email,
-            }
-            return Response(resp, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_201_CREATED)
 
         headers = self.get_success_headers(serializer.data)
         return Response({
@@ -101,7 +107,10 @@ class ReenviarVerificacionView(APIView):
             return Response({"detail": "Esta cuenta no requiere verificación."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        enviar_correo_verificacion(user)
+        try:
+            enviar_correo_verificacion(user)
+        except Exception:
+            pass
 
         return Response({"detail": "Enlace de verificación reenviado. Revisa tu correo."})
 

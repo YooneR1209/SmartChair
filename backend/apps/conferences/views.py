@@ -1,3 +1,5 @@
+import threading
+
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -71,39 +73,35 @@ class ConferenciaDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ConferenciaDesdeTemplateView(APIView):
-    """RF-03: crea una conferencia nueva copiando la configuración de una plantilla."""
+    """RF-03: clona cualquier conferencia (plantilla o no) con nuevo nombre."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, slug):
-        plantilla = get_object_or_404(Conferencia, slug=slug, es_plantilla=True)
+        original = get_object_or_404(Conferencia, slug=slug)
         serializer = ConferenciaDesdeTemplateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         d = serializer.validated_data
 
-        # Clonar la plantilla
-        plantilla.pk               = None
-        plantilla.nombre           = d['nombre']
-        plantilla.fecha_inicio     = d['fecha_inicio']
-        plantilla.fecha_fin        = d['fecha_fin']
-        plantilla.estado           = Conferencia.Estado.BORRADOR
-        plantilla.es_plantilla     = False
-        plantilla.plantilla_origen_id = get_object_or_404(
-            Conferencia, slug=slug
-        ).id
-        plantilla.organizador      = request.user
+        # Clonar la conferencia
+        original.pk           = None
+        original.nombre       = d['nombre']
+        original.estado       = Conferencia.Estado.BORRADOR
+        original.es_plantilla = False
+        original.organizador  = request.user
+        original.slug         = ''  # se autogenera en save()
 
-        # Generar slug único
+        if d.get('fecha_inicio'):
+            original.fecha_inicio = d['fecha_inicio']
+        if d.get('fecha_fin'):
+            original.fecha_fin = d['fecha_fin']
+
+        # Registrar la conferencia origen
         from django.utils.text import slugify
-        base_slug = slugify(d['nombre'])
-        slug_new, n = base_slug, 1
-        while Conferencia.objects.filter(slug=slug_new).exists():
-            slug_new = f'{base_slug}-{n}'
-            n += 1
-        plantilla.slug = slug_new
-        plantilla.save()
+        original.plantilla_origen = get_object_or_404(Conferencia, slug=slug)
+        original.save()
 
         return Response(
-            ConferenciaDetailSerializer(plantilla).data,
+            ConferenciaDetailSerializer(original).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -185,7 +183,7 @@ class InvitarRevisorView(generics.CreateAPIView):
         except User.DoesNotExist:
             pass
         from apps.notifications.services import enviar_invitacion_revisor
-        enviar_invitacion_revisor(invitacion)
+        threading.Thread(target=enviar_invitacion_revisor, args=(invitacion,), daemon=True).start()
 
 
 class AceptarInvitacionView(APIView):
@@ -212,6 +210,16 @@ class AceptarInvitacionView(APIView):
             usuario=request.user,
             rol=ConferenciaUsuario.RolEnConferencia.REVISOR,
             defaults={'activo': True},
+        )
+
+        # Notificación in-app al aceptar la invitación
+        from apps.notifications.services import crear_notificacion
+        crear_notificacion(
+            usuario=request.user,
+            tipo='invitacion_revisor',
+            titulo=f'Invitación aceptada como revisor - {invitacion.conferencia.nombre}',
+            mensaje=f'Ahora eres revisor de la conferencia "{invitacion.conferencia.nombre}".',
+            link=f'/conferencias/{invitacion.conferencia.slug}',
         )
 
         return Response({'detail': 'Invitación aceptada. Ahora eres revisor de esta conferencia.'})

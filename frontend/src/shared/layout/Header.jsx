@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { notifications, admin, conferencias, reviews, postulaciones, payments, certificados } from '../services/api';
+import { notifications, admin, conferencias, reviews, postulaciones } from '../services/api';
 import { useToast } from '../components/ToastContext';
 
 const NOTIF_STYLES = {
@@ -12,118 +12,81 @@ const NOTIF_STYLES = {
 
 function NotificationPanel({ onClose }) {
   const panelRef = useRef(null);
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const profileRaw = localStorage.getItem('profile');
-    let role = 'AUTOR';
-    let userId = null;
-    if (profileRaw) {
-      try {
-        const p = JSON.parse(profileRaw);
-        userId = p.id;
-        const pr = (p.rol || '').toUpperCase();
-        if (pr) role = pr;
-      } catch { /* */ }
-    }
-    const selected = localStorage.getItem('selectedRole');
-    if (selected) role = selected;
-
     async function fetchData() {
-      const list = [];
+      try {
+        const data = await notifications.listar();
+        const notifs = data?.notificaciones || data?.results || data || [];
+        if (Array.isArray(notifs) && notifs.length > 0) {
+          const mapped = notifs.map(n => ({
+            id: n.id,
+            type: n.tipo === 'invitacion_revisor' || n.tipo === 'asignacion_revisor' ? 'alerta' : 'info',
+            message: n.titulo,
+            description: n.mensaje || '',
+            time: n.creado_en ? new Date(n.creado_en).toLocaleDateString('es-EC', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Ahora',
+            link: n.link,
+            leida: n.leida,
+          }));
+          setItems(mapped);
+          setLoading(false);
+          return;
+        }
+      } catch { /* stats fallback */ }
 
+      const profileRaw = localStorage.getItem('profile');
+      let role = 'AUTOR';
+      if (profileRaw) {
+        try {
+          const p = JSON.parse(profileRaw);
+          const pr = (p.rol || '').toUpperCase();
+          if (pr) role = pr;
+        } catch { /* */ }
+      }
+      const selected = localStorage.getItem('selectedRole');
+      if (selected) role = selected;
+
+      const list = [];
       try {
         if (role === 'ADMINISTRADOR') {
           const stats = await admin.stats();
-          if (stats.total_usuarios != null) list.push({ type: 'info', message: `${stats.total_usuarios} usuarios registrados en el sistema.`, time: 'Ahora' });
-          if (stats.total_conferencias != null) list.push({ type: 'info', message: `${stats.total_conferencias} conferencias creadas.`, time: 'Ahora' });
-          if (stats.total_ponencias != null) list.push({ type: 'alerta', message: `${stats.total_ponencias} postulaciones registradas.`, time: 'Ahora' });
+          if (stats.total_usuarios != null) list.push({ type: 'info', message: `${stats.total_usuarios} usuarios registrados.`, time: 'Ahora' });
+          if (stats.total_conferencias != null) list.push({ type: 'info', message: `${stats.total_conferencias} conferencias.`, time: 'Ahora' });
+          if (stats.total_ponencias != null) list.push({ type: 'alerta', message: `${stats.total_ponencias} postulaciones.`, time: 'Ahora' });
           if (stats.pagos_completados != null) list.push({ type: 'exito', message: `${stats.pagos_completados} pagos completados.`, time: 'Ahora' });
-          if (stats.usuarios_activos != null) list.push({ type: 'exito', message: `${stats.usuarios_activos} usuarios activos.`, time: 'Ahora' });
-          if (stats.roles_count) {
-            Object.entries(stats.roles_count).forEach(([rol, count]) => {
-              list.push({ type: 'info', message: `${count} usuario(s) con rol ${rol}.`, time: 'Ahora' });
-            });
-          }
         }
-
-        if (role === 'ORGANIZADOR' || role === 'ADMINISTRADOR') {
-          const confs = await conferencias.listar();
-          const misConfs = Array.isArray(confs) ? confs : [];
-          list.push({ type: 'info', message: `Tienes ${misConfs.length} conferencia(s) disponible(s).`, time: 'Ahora' });
-          const abiertas = misConfs.filter(c => c.estado === 'abierta' || c.estado === 'activa').length;
-          if (abiertas > 0) list.push({ type: 'alerta', message: `${abiertas} conferencia(s) abiertas requieren atención.`, time: 'Ahora' });
-        }
-
         if (role === 'ORGANIZADOR') {
-          try {
-            const confs = await conferencias.listar();
-            const confsArr = Array.isArray(confs) ? confs : [];
-            let totalSinAsignar = 0;
-            for (const c of confsArr) {
-              try {
-                const ponencias = await conferencias.listarPonencias(c.slug);
-                if (Array.isArray(ponencias)) {
-                  totalSinAsignar += ponencias.filter(p => p.estado === 'postulada').length;
-                }
-              } catch { /* */ }
-            }
-            if (totalSinAsignar > 0) list.push({ type: 'alerta', message: `${totalSinAsignar} ponencia(s) sin asignar a revisores.`, time: 'Ahora' });
-          } catch { /* */ }
+          const confs = await conferencias.listar();
+          const arr = Array.isArray(confs) ? confs : [];
+          let sinAsignar = 0;
+          for (const c of arr) {
+            try {
+              const pons = await conferencias.listarPonencias(c.slug);
+              if (Array.isArray(pons)) sinAsignar += pons.filter(p => p.estado === 'postulada').length;
+            } catch { /* */ }
+          }
+          if (sinAsignar > 0) list.push({ type: 'alerta', message: `${sinAsignar} ponencia(s) sin asignar.`, time: 'Ahora' });
         }
-
         if (role === 'REVISOR') {
-          try {
-            const asigs = await reviews.misAsignaciones();
-            const arr = Array.isArray(asigs) ? asigs : [];
-            const pendientes = arr.filter(a => a.estado_revision !== 'completada' && a.estado_revision !== 'completado').length;
-            const completadas = arr.filter(a => a.estado_revision === 'completada' || a.estado_revision === 'completado').length;
-            if (pendientes > 0) list.push({ type: 'alerta', message: `Tienes ${pendientes} revisión(es) pendiente(s) por realizar.`, time: 'Ahora' });
-            if (completadas > 0) list.push({ type: 'exito', message: `Has completado ${completadas} revisión(es).`, time: 'Ahora' });
-            if (arr.length === 0) list.push({ type: 'info', message: 'No tienes asignaciones de revisión por el momento.', time: 'Ahora' });
-          } catch { /* */ }
+          const asigs = await reviews.misAsignaciones();
+          const arr = Array.isArray(asigs) ? asigs : [];
+          const pendientes = arr.filter(a => a.estado_revision !== 'completada').length;
+          if (pendientes > 0) list.push({ type: 'alerta', message: `${pendientes} revisión(es) pendiente(s).`, time: 'Ahora' });
         }
-
-        if (role === 'AUTOR' || role === 'REVISOR') {
-          try {
-            const misPonencias = await postulaciones.misPostulaciones();
-            const arr = Array.isArray(misPonencias) ? misPonencias : [];
-            const enRevision = arr.filter(p => p.estado === 'en_revision').length;
-            const aceptadas = arr.filter(p => p.estado === 'aceptada').length;
-            const rechazadas = arr.filter(p => p.estado === 'rechazada').length;
-            const postuladas = arr.filter(p => p.estado === 'postulada').length;
-            if (postuladas > 0) list.push({ type: 'info', message: `${postuladas} ponencia(s) postulada(s) esperando revisión.`, time: 'Ahora' });
-            if (enRevision > 0) list.push({ type: 'alerta', message: `${enRevision} ponencia(s) en revisión.`, time: 'Ahora' });
-            if (aceptadas > 0) list.push({ type: 'exito', message: `${aceptadas} ponencia(s) aceptada(s) — ¡felicidades!`, time: 'Ahora' });
-            if (rechazadas > 0) list.push({ type: 'error', message: `${rechazadas} ponencia(s) rechazada(s).`, time: 'Ahora' });
-          } catch { /* */ }
-        }
-
         if (role === 'AUTOR') {
-          try {
-            const pagosList = await payments.listar();
-            const arr = Array.isArray(pagosList) ? pagosList : [];
-            const pendientes = arr.filter(p => p.estado === 'pendiente' || p.estado === 'Pendiente').length;
-            if (pendientes > 0) list.push({ type: 'alerta', message: `Tienes ${pendientes} pago(s) pendiente(s).`, time: 'Ahora' });
-          } catch { /* */ }
-
-          try {
-            const certs = await certificados.listar();
-            const arr = Array.isArray(certs) ? certs : [];
-            if (arr.length > 0) list.push({ type: 'exito', message: `Tienes ${arr.length} certificado(s) disponible(s) para descargar.`, time: 'Ahora' });
-          } catch { /* */ }
+          const pons = await postulaciones.misPostulaciones();
+          const arr = Array.isArray(pons) ? pons : [];
+          const enRev = arr.filter(p => p.estado === 'en_revision').length;
+          if (enRev > 0) list.push({ type: 'alerta', message: `${enRev} ponencia(s) en revisión.`, time: 'Ahora' });
         }
       } catch { /* */ }
-
-      if (list.length === 0) {
-        list.push({ type: 'info', message: 'No hay notificaciones nuevas en este momento.', time: 'Ahora' });
-      }
-
+      if (list.length === 0) list.push({ type: 'info', message: 'No hay notificaciones nuevas.', time: 'Ahora' });
       setItems(list);
       setLoading(false);
     }
-
     fetchData();
   }, []);
 
@@ -162,8 +125,9 @@ function NotificationPanel({ onClose }) {
               <div key={n.id} style={{
                 padding: '14px 18px', borderBottom: '1px solid #F0F0F0',
                 display: 'flex', gap: '12px', alignItems: 'flex-start',
-                transition: 'background 0.1s', cursor: 'default',
+                transition: 'background 0.1s', cursor: n.link ? 'pointer' : 'default',
               }}
+                onClick={() => { if (n.link) { navigate(n.link); onClose(); } }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#FAFBFC'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                 <div style={{
@@ -188,19 +152,45 @@ function NotificationPanel({ onClose }) {
           background: 'none', border: 'none', color: '#9A6F00', fontWeight: 600,
           fontSize: '12px', cursor: 'pointer',
         }}
-          onClick={() => { notifications.testBienvenida().catch(() => {}); }}>
-          Ver todas las notificaciones
+          onClick={async () => {
+            try {
+              await notifications.marcarTodasLeidas();
+              setItems(prev => prev.map(n => ({ ...n, leida: true })));
+            } catch { /* */ }
+            onClose();
+          }}>
+          Marcar todas como leídas
         </button>
       </div>
     </div>
   );
 }
 
-function Header({ userInitials = 'SC', notifCount = 0, onToggleSidebar, profile }) {
+function Header({ userInitials = 'SC', notifCount: notifCountProp = 0, onToggleSidebar, profile }) {
   const [showNotifs, setShowNotifs] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { addToast } = useToast();
   const navigate = useNavigate();
   const bellRef = useRef(null);
+
+  const fetchUnreadCount = () => {
+    notifications.listar()
+      .then(data => {
+        const count = data?.no_leidas ?? data?.unread ?? 0;
+        setUnreadCount(count);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!showNotifs) fetchUnreadCount();
+  }, [showNotifs]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -291,21 +281,27 @@ function Header({ userInitials = 'SC', notifCount = 0, onToggleSidebar, profile 
             aria-label="Notificaciones"
           >
             <span className="material-symbols-outlined" style={{ fontSize: '22px', color: '#5D6D7E' }}>notifications</span>
-            {!showNotifs && (
+            {!showNotifs && unreadCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
+                  top: '-4px',
+                  right: '-4px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  minWidth: '8px',
-                  height: '8px',
+                  minWidth: '18px',
+                  height: '18px',
                   borderRadius: '50%',
                   background: '#C0392B',
+                  color: '#FFF',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '0 4px',
                 }}
-              />
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
           {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}

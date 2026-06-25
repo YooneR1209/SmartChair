@@ -378,8 +378,9 @@ function MisPonencias() {
                         Reenviar Ponencia
                       </button>
                     )}
-                    {key === 'aceptada' && (
+                    {key === 'aceptada' && sub.estado === 'aceptada' && (
                       <button
+                        onClick={() => window.open(`/api/certificados/${sub.id}/descargar/`, '_blank')}
                         style={{
                           fontSize: '11px',
                           fontWeight: 700,

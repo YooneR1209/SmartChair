@@ -149,11 +149,14 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
         r.comentario_autor for r in revisiones_completadas if r.comentario_autor
     ]
 
-    veredicto = Veredicto.objects.create(
+    veredicto, created = Veredicto.objects.update_or_create(
         ponencia=ponencia,
-        emitido_por=None,
-        resultado=resultado,
-        resumen_para_autor=" | ".join(feedback_anonimo),
+        defaults={
+            "emitido_por": None,
+            "resultado": resultado,
+            "resumen_para_autor": " | ".join(feedback_anonimo),
+            "notificado": True,
+        },
     )
 
     mapa_estado = {
@@ -170,8 +173,6 @@ def emitir_veredicto_final(ponencia, resultado, revisiones_completadas):
     if veredicto.es_rechazado() and ponencia.pago_confirmado:
         _reembolsar_ponencia(ponencia)
 
-    veredicto.notificado = True
-    veredicto.save(update_fields=["notificado"])
     return veredicto
 
 

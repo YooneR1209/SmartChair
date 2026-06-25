@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from .models import Ponencia, RespuestaFormulario
+from apps.reviews.models import Revision
 
 
 # Transiciones de estado permitidas para el organizador/admin
@@ -91,4 +92,19 @@ def enviar_cambios(ponencia, archivo, autor):
     ponencia.estado              = Ponencia.Estado.CAMBIOS_ENVIADOS
     ponencia.cambios_enviados_en = timezone.now()
     ponencia.save(update_fields=['archivo_revisado', 'estado', 'cambios_enviados_en', 'actualizado_en'])
+
+    # Reiniciar las revisiones de los revisores activos para nuevo veredicto
+    Revision.objects.filter(
+        asignacion__ponencia=ponencia,
+        asignacion__activo=True,
+        estado=Revision.Estado.COMPLETADA,
+    ).update(
+        estado=Revision.Estado.PENDIENTE,
+        veredicto='',
+        comentario_autor='',
+        comentario_privado='',
+        respuestas_rubrica={},
+        iniciada_en=None,
+        completada_en=None,
+    )
     return ponencia

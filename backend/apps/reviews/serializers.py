@@ -27,7 +27,12 @@ class RevisionParaRevisorSerializer(serializers.ModelSerializer):
 
     def get_archivo(self, obj):
         ponencia = obj.asignacion.ponencia
-        if ponencia and ponencia.archivo:
+        if not ponencia:
+            return None
+        # Mostrar archivo_revisado si existe (reenvío), sino el original
+        if ponencia.archivo_revisado:
+            return f"/api/conferencias/ponencias/{ponencia.id}/descargar/?revisado=1"
+        if ponencia.archivo:
             return f"/api/conferencias/ponencias/{ponencia.id}/descargar/"
         return None
     # autor, autor_email, autores_adicionales → NUNCA se exponen aquí
@@ -127,8 +132,12 @@ class MiAsignacionSerializer(serializers.ModelSerializer):
 
     def get_archivo(self, obj):
         rev = self.get_revision(obj)
-        if rev and rev.asignacion.ponencia.archivo:
-            return f"/api/conferencias/ponencias/{rev.asignacion.ponencia_id}/descargar/"
+        if rev:
+            ponencia = rev.asignacion.ponencia
+            if ponencia and ponencia.archivo_revisado:
+                return f"/api/conferencias/ponencias/{ponencia.id}/descargar/?revisado=1"
+            if ponencia and ponencia.archivo:
+                return f"/api/conferencias/ponencias/{ponencia.id}/descargar/"
         return None
 
 

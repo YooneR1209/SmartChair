@@ -77,16 +77,17 @@ class ConferenciaDetailSerializer(serializers.ModelSerializer):
 
 
 class ConferenciaDesdeTemplateSerializer(serializers.Serializer):
-    """RF-03: crear una conferencia nueva a partir de una plantilla."""
-    nombre      = serializers.CharField(max_length=255)
-    fecha_inicio = serializers.DateField()
-    fecha_fin    = serializers.DateField()
+    """RF-03: clonar una conferencia existente (plantilla o no)."""
+    nombre       = serializers.CharField(max_length=255)
+    fecha_inicio = serializers.DateField(required=False)
+    fecha_fin    = serializers.DateField(required=False)
 
     def validate(self, attrs):
-        if attrs['fecha_fin'] < attrs['fecha_inicio']:
-            raise serializers.ValidationError(
-                {'fecha_fin': 'La fecha de fin no puede ser anterior a la de inicio.'}
-            )
+        if attrs.get('fecha_inicio') and attrs.get('fecha_fin'):
+            if attrs['fecha_fin'] < attrs['fecha_inicio']:
+                raise serializers.ValidationError(
+                    {'fecha_fin': 'La fecha de fin no puede ser anterior a la de inicio.'}
+                )
         return attrs
 
 

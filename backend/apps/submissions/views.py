@@ -133,14 +133,21 @@ class DescargarArchivoView(APIView):
         ponencia = get_object_or_404(Ponencia, pk=pk)
         self.check_object_permissions(request, ponencia)
 
-        if not ponencia.archivo:
+        usar_revisado = request.query_params.get('revisado') == '1'
+
+        if usar_revisado and ponencia.archivo_revisado:
+            archivo_field = ponencia.archivo_revisado
+        else:
+            archivo_field = ponencia.archivo
+
+        if not archivo_field:
             return Response({'error': 'La ponencia no tiene archivo.'}, status=status.HTTP_404_NOT_FOUND)
 
-        archivo_path = ponencia.archivo.path
+        archivo_path = archivo_field.path
         if not os.path.exists(archivo_path):
             return Response({'error': 'El archivo no existe en el servidor.'}, status=status.HTTP_404_NOT_FOUND)
 
-        filename = os.path.basename(ponencia.archivo.name)
+        filename = os.path.basename(archivo_field.name)
         response = FileResponse(open(archivo_path, 'rb'), content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response

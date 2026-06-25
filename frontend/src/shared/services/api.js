@@ -13,8 +13,9 @@ export function getAuthHeaders() {
 
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
-  const headers = { ...getAuthHeaders(), ...options.headers };
-  const config = { ...options, headers };
+  const { auth = true, ...fetchOptions } = options;
+  const headers = { ...(auth ? getAuthHeaders() : {}), ...options.headers };
+  const config = { ...fetchOptions, headers };
   const response = await fetch(url, config);
   const data = await response.json().catch(() => null);
   if (!response.ok) {
@@ -28,26 +29,30 @@ export const auth = {
   login: (email, password) =>
     request('/auth/login/', {
       method: 'POST',
+      auth: false,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     }),
   registro: (data) =>
     request('/auth/registro/', {
       method: 'POST',
+      auth: false,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
   verificarEmail: (token) =>
-    request(`/auth/verificar/?token=${encodeURIComponent(token)}`),
+    request(`/auth/verificar/?token=${encodeURIComponent(token)}`, { auth: false }),
   verificarCodigo: (email, codigo) =>
     request('/auth/verificar/codigo/', {
       method: 'POST',
+      auth: false,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, codigo }),
     }),
   reenviarVerificacion: (email) =>
     request('/auth/verificar/reenviar/', {
       method: 'POST',
+      auth: false,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     }),
@@ -90,8 +95,12 @@ export const conferencias = {
     }),
   eliminar: (slug) =>
     request(`/conferencias/${slug}/`, { method: 'DELETE' }),
-  clonar: (slug) =>
-    request(`/conferencias/${slug}/desde-plantilla/`, { method: 'POST' }),
+  clonar: (slug, data = {}) =>
+    request(`/conferencias/${slug}/desde-plantilla/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
   invitarRevisor: (slug, email) =>
     request(`/conferencias/${slug}/invitar-revisor/`, {
       method: 'POST',

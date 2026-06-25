@@ -19,7 +19,7 @@ class CertificadoListView(APIView):
     def get(self, request):
         qs = Ponencia.objects.filter(
             autor_principal=request.user,
-            estado__in=[Ponencia.Estado.ACEPTADA, Ponencia.Estado.ACEPTADA_CON_CAMBIOS],
+            estado=Ponencia.Estado.ACEPTADA,
         )
         data = []
         for p in qs:

@@ -8,7 +8,7 @@
 
 <br>
 
-<img src="https://github.com/diegoih23/Pruebas-readme/blob/main/images/minecraft.gif" width="600"/>
+<img src="https://github.com/YooneR1209/SmartChair/blob/develop/images/minecraft.gif" width="600"/>
 
 <br><br>
 
@@ -1078,7 +1078,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <a href="https://github.com/marco-cst">
 
-<img src="https://github.com/YooneR1209/SmartChair/blob/main/images/166523628.png" width="90"/>
+<img src="https://github.com/YooneR1209/SmartChair/blob/develop/images/166523628.png" width="90"/>
 
 <br>
 
@@ -1106,7 +1106,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <a href="https://github.com/YooneR1209">
 
-<img src="https://github.com/YooneR1209/SmartChair/blob/main/images/166523269.jpg" width="90"/>
+<img src="https://github.com/YooneR1209/SmartChair/blob/develop/images/218983922.jpg" width="90"/>
 
 <br>
 
@@ -1134,7 +1134,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <a href="https://github.com/ArisCorBet">
 
-<img src="https://github.com/diegoih23/Pruebas-readme/blob/main/170268833.png" width="90"/>
+<img src="https://github.com/YooneR1209/SmartChair/blob/develop/images/166561281.jpg" width="90"/>
 
 <br>
 

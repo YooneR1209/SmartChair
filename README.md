@@ -57,6 +57,52 @@ Centraliza procesos clave como:
 
 ---
 
+# ⚙️ Instalación y ejecución local
+
+## Requisitos
+
+* **Python 3.11**
+* **Node.js 18+**
+* **MariaDB** accesible para el backend
+
+## 1) Backend
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 8000
+```
+
+Variables mínimas recomendadas para desarrollo local:
+
+* `SECRET_KEY`
+* `DEBUG=True`
+* `ALLOWED_HOSTS=localhost,127.0.0.1`
+* Conexión a base de datos mediante `DATABASE_URL` o `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`
+
+## 2) Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Por defecto, el frontend consume `/api` y funciona con el proxy de Vite hacia `http://localhost:8000`. Si el backend corre en otra URL, define `VITE_API_URL`.
+
+## 3) Acceso
+
+* Frontend: `http://localhost:5173`
+* Backend API: `http://localhost:8000/api`
+
+---
+
+
+
 # 🎯 Objetivo del sistema
 
 Desarrollar una plataforma digital institucional que permita:

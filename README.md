@@ -1096,7 +1096,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <br>
 
-<b>Diego Herrera</b>
+<b>Juan Veintimilla</b>
 
 </a>
 
@@ -1110,7 +1110,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <br>
 
-<b>Juan Veintimilla</b>
+<b>Ariel Tandazo</b>
 
 </a>
 
@@ -1138,7 +1138,7 @@ Agradecemos a los docentes y compañeros que han aportado con ideas, revisiones 
 
 <br>
 
-<b>Carlos Guajala</b>
+<b>Ariana Cordova</b>
 
 </a>
 

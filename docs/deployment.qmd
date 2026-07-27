@@ -1,0 +1,115 @@
+# Despliegue — Railway
+
+El proyecto se despliega en **Railway** como dos servicios independientes:
+
+1. **Backend**: Django API con Gunicorn
+2. **Frontend**: React SPA servida con `serve`
+
+## Backend
+
+### Archivos de despliegue
+
+| Archivo | Descripción |
+|---------|-------------|
+| `Procfile` | `release` (migrate + collectstatic) + `web` (gunicorn) |
+| `Dockerfile` | Python 3.12-slim con dependencias del sistema para mysqlclient |
+| `railway.json` | Configuración Railway |
+| `start.sh` | Script de debug que imprime variables de entorno antes de iniciar |
+| `runtime.txt` | Especificación de versión de Python |
+
+### Procfile
+
+```
+release: python manage.py migrate --noinput && python manage.py collectstatic --noinput
+web: gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+```
+
+### Variables de entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `SECRET_KEY` | Secreto de Django |
+| `DEBUG` | `False` en producción |
+| `ALLOWED_HOSTS` | Dominios permitidos |
+| `CORS_ALLOWED_ORIGINS` | Orígenes CORS |
+| `DB_*` o `MARIADB_*` o `MYSQL*` | Configuración de BD (ver sección de DB) |
+| `STRIPE_PUBLIC_KEY` / `STRIPE_SECRET_KEY` | Claves de Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Secreto de webhook |
+| `EMAIL_*` | Configuración SMTP |
+| `FRONTEND_URL` | URL del frontend |
+
+## Frontend
+
+### Archivos de despliegue
+
+| Archivo | Descripción |
+|---------|-------------|
+| `Dockerfile` | Node 22-alpine, multi-stage: build + serve |
+| `railway.json` | Configuración Railway |
+| `.env.production` | Variables de entorno de producción |
+
+### Dockerfile
+
+```dockerfile
+# Stage 1: Build
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve
+FROM node:22-alpine AS serve
+RUN npm install -g serve
+COPY --from=build /app/dist /app
+EXPOSE 3000
+CMD ["serve", "-s", "/app", "-l", "3000"]
+```
+
+### Variables de entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `VITE_API_URL` | URL base de la API backend |
+| `VITE_STRIPE_PUBLIC_KEY` | Clave pública de Stripe |
+
+## URLs de Producción
+
+- **Frontend**: `https://heartfelt-curiosity-production-2dc9.up.railway.app`
+- **Backend**: `https://smartchair-production-2687.up.railway.app`
+
+## Conexión a Base de Datos
+
+### Configuración actual
+- **Host público**: `reseau.proxy.rlwy.net:13834`
+- **Base de datos**: `railway`
+- **Usuario**: `railway`
+
+### Problema conocido
+La conexión interna `smartchair.railway.internal:3306` falla con `Connection refused`. La solución involucra:
+
+1. **Definitiva**: Vincular MariaDB → backend en Railway dashboard
+2. **Workaround**: Usar host público (`MARIADB_PUBLIC_HOST`/`MARIADB_PUBLIC_PORT`) como fallback en settings.py
+
+### Cómo verificar la conexión
+```
+GET https://smartchair-production-2687.up.railway.app/api/health/db/
+
+Response esperada:
+{ "status": "ok", "db": "connected", "config": {...}, "env": {...} }
+```
+
+Si la DB no está conectada, el endpoint devuelve información de debug con las variables de entorno detectadas.
+
+## Flujo de Despliegue
+
+1. Hacer push a la rama correspondiente en GitHub
+2. Railway detecta automáticamente los cambios y despliega
+3. Backend: ejecuta `release` commands (migrate + collectstatic) y luego inicia Gunicorn
+4. Frontend: ejecuta build y sirve con `serve`
+
+### Ramas
+- `develop` → despliegue automático en Railway
+- `main` → producción estable (despliegue manual)
+- Las ramas `feature/*` y `fix/*` **no** se despliegan automáticamente

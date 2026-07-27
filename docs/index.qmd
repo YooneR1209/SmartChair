@@ -1,0 +1,91 @@
+# SmartChair
+
+**SmartChair** es un sistema web para la gestión integral de conferencias académicas. Permite a organizadores crear y administrar conferencias, a autores postular trabajos (ponencias), a revisores evaluar dichos trabajos mediante revisión por pares, y a todos los actores interactuar en un flujo de estados bien definido.
+
+## Stack Tecnológico
+
+### Backend
+
+| Componente       | Tecnología                     |
+|------------------|--------------------------------|
+| Framework web    | Django 5.2                     |
+| API REST         | Django REST Framework          |
+| Autenticación    | SimpleJWT (JWT)                |
+| Base de datos    | MariaDB / MySQL                |
+| Pagos            | Stripe SDK                     |
+| PDF              | ReportLab                      |
+| Despliegue       | Gunicorn + Whitenoise          |
+
+### Frontend
+
+| Componente       | Tecnología                     |
+|------------------|--------------------------------|
+| Framework UI     | React 19.2.5                   |
+| Build tool       | Vite 8.x                       |
+| Estilos          | Tailwind CSS 4.2.4             |
+| Routing          | React Router 7.14.2            |
+| HTTP             | Axios                          |
+| Iconos           | Lucide React                   |
+| Pagos            | Stripe Elements                |
+
+## Actores del Sistema
+
+| Rol              | Descripción                                            |
+|------------------|--------------------------------------------------------|
+| `ADMINISTRADOR`  | Control total del sistema, gestión de usuarios         |
+| `ORGANIZADOR`    | Crea y gestiona conferencias, invita revisores, emite veredictos |
+| `AUTOR`          | Postula ponencias y responde a veredictos              |
+| `REVISOR`        | Evalúa ponencias asignadas mediante rúbrica            |
+| `SUPERVISOR`     | Observa el estado de la conferencia sin intervenir     |
+
+Los roles son **por conferencia** (`ConferenciaUsuario.rol`), salvo `ADMINISTRADOR` que es global.
+
+## Flujo del Dominio
+
+~~~
+Conferencia → Ponencia → AsignacionRevisor → Revision → Veredicto
+~~~
+
+Cada entidad tiene un ciclo de vida propio con estados discretos y transiciones controladas.
+
+## Estructura del Monorepo
+
+```
+SmartChair/
+├── backend/
+│   ├── apps/
+│   │   ├── core/              # Modelos abstractos base (Evento)
+│   │   ├── accounts/          # Usuarios, autenticación, perfiles
+│   │   ├── conferences/       # Conferencias, participantes, invitaciones
+│   │   ├── submissions/       # Ponencias y respuestas de formulario
+│   │   ├── reviews/           # Asignaciones, revisiones, veredictos
+│   │   ├── payments/          # Integración Stripe
+│   │   └── notifications/     # Notificaciones in-app y email log
+│   ├── config/                # settings.py, urls.py, wsgi.py
+│   ├── templates/             # Email templates
+│   ├── media/                 # Archivos subidos
+│   ├── manage.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── modules/           # Módulos funcionales (auth, conferences, etc.)
+│   │   ├── shared/            # Componentes, layouts, servicios, utilerías
+│   │   ├── styles/            # CSS global
+│   │   ├── App.jsx            # Router principal
+│   │   └── main.jsx           # Entry point
+│   ├── index.html
+│   └── package.json
+├── specs/                     # Spec-driven development
+│   ├── constitution.md
+│   └── submissions/           # Specs del módulo de ponencias
+├── docs/                      # Documentación (Quarto)
+└── CLAUDE.md                  # Instrucciones para agentes IA
+```
+
+## Convenciones de la API
+
+- **URLs**: en español, plural, con guiones. Ej: `/api/conferencias/`, `/api/conferencias/{slug}/invitar-revisor/`
+- **Campos JSON**: `snake_case` en español. Ej: `fecha_inicio`, `autor_principal`
+- **Tokens JWT**: access token 2h, refresh token 7d, rotación activa
+- **Paginación**: 20 registros por página por defecto
+- **Códigos HTTP**: 201 (creación), 204 (éxito sin contenido), 400 (validación), 401 (no autenticado), 403 (sin permiso), 404 (no encontrado)

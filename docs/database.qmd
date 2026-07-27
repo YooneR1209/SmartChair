@@ -1,0 +1,212 @@
+# Base de Datos — MariaDB
+
+## Configuración
+
+La base de datos es **MariaDB** desplegada en Railway. La configuración en `settings.py` usa una extensa cadena de fallback para variables de entorno:
+
+### URL-based (prioridad)
+~~~
+DATABASE_URL → MARIADB_URL → MARIADB_PRIVATE_URL → MYSQL_URL
+~~~
+
+### Fallback individual
+~~~
+DB_HOST:
+  MARIADB_HOST → MYSQLHOST → MYSQL_HOST → MYSQL_ADDON_HOST → MARIADB_PUBLIC_HOST → DB_HOST
+
+DB_PORT:
+  MARIADB_PORT → MYSQLPORT → MYSQL_PORT → MYSQL_ADDON_PORT → MARIADB_PUBLIC_PORT → DB_PORT
+
+DB_NAME:
+  MARIADB_DATABASE → MARIADB_DB → MYSQLDATABASE → MYSQL_DATABASE → MYSQL_ADDON_DB → DB_NAME
+
+DB_USER:
+  MARIADB_USER → MYSQLUSER → MYSQL_USER → MYSQL_ADDON_USER → DB_USER
+
+DB_PASSWORD:
+  MARIADB_PASSWORD → MARIADB_PWD → MYSQLPASSWORD → MYSQL_PASSWORD → MYSQL_ADDON_PASSWORD → DB_PASSWORD
+~~~
+
+### SSL
+
+Activado para hosts remotos con `check_hostname=False` y `verify_cert=False` (compatible con certificados autofirmados de Railway).
+
+## Variables de Entorno Requeridas
+
+| Variable | Descripción |
+|----------|-------------|
+| `DB_NAME` | Nombre de la base de datos |
+| `DB_USER` | Usuario de BD |
+| `DB_PASSWORD` | Contraseña |
+| `DB_HOST` | Host (ej: `reseau.proxy.rlwy.net`) |
+| `DB_PORT` | Puerto (ej: `13834`) |
+
+## Problema Conocido (Junio 2026)
+
+- La conexión interna `smartchair.railway.internal:3306` falla con `Connection refused`
+- El host público `reseau.proxy.rlwy.net:13834` funciona correctamente
+- Solución definitiva: vincular el servicio MariaDB → backend en Railway dashboard
+- Workaround implementado: `MARIADB_PUBLIC_HOST`/`MARIADB_PUBLIC_PORT` como fallback en settings.py
+- Se agregó `pymysql` como driver alternativo
+
+## Modelo de Datos
+
+### `accounts.User`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `email` | EmailField (PK) | Correo electrónico y username |
+| `nombres` | CharField | Nombres del usuario |
+| `apellidos` | CharField | Apellidos |
+| `institucion` | CharField | Institución de afiliación |
+| `biografia` | TextField | Biografía / reseña |
+| `foto_perfil` | ImageField | Foto de perfil |
+| `rol` | CharField (choices) | ADMINISTRADOR, ORGANIZADOR, REVISOR, AUTOR, SUPERVISOR |
+| `is_active` | BooleanField | Cuenta activa |
+| `is_staff` | BooleanField | Acceso al admin de Django |
+| `fecha_registro` | DateTimeField | Fecha de registro |
+| `ultima_sesion` | DateTimeField | Último login |
+
+### `accounts.VerificacionEmail`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `usuario` | OneToOne → User | Usuario asociado |
+| `token` | CharField | Token UUID |
+| `codigo` | CharField (6) | Código numérico |
+| `creado_en` | DateTimeField | Fecha de creación |
+
+### `conferences.Conferencia`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| (hereda Evento) | — | nombre, descripcion, fecha_inicio, fecha_fin, es_publico |
+| `organizador` | FK → User | Creador de la conferencia |
+| `slug` | SlugField | URL amigable (único) |
+| `visibilidad` | CharField | pública / privada |
+| `estado` | CharField | borrador, abierta, en_revision, cerrada, archivada |
+| `imagen_banner` | ImageField | Imagen de portada |
+| `sitio_web` | URLField | Sitio web oficial |
+| `lugar` | CharField | Ubicación |
+| `areas_tematicas` | JSONField | Lista de áreas |
+| `fecha_inicio_postulaciones` | DateTimeField | Inicio de recepción |
+| `fecha_fin_postulaciones` | DateTimeField | Cierre de recepción |
+| `es_de_pago` | BooleanField | Conferencia de pago |
+| `monto_inscripcion` | DecimalField | Monto de inscripción |
+| `formulario_postulacion` | JSONField | Campos dinámicos |
+| `max_autores` | IntegerField | Máximo de coautores |
+| `min_revisores` / `max_revisores` | IntegerField | Revisores por ponencia |
+| `rubrica` | JSONField | Criterios de evaluación |
+| `es_plantilla` | BooleanField | Es plantilla reutilizable |
+| `plantilla_origen` | FK → Conferencia | Plantilla de origen |
+
+### `conferences.ConferenciaUsuario`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `conferencia` | FK → Conferencia | — |
+| `usuario` | FK → User | — |
+| `rol` | CharField | ORGANIZADOR, REVISOR, AUTOR, SUPERVISOR |
+| `activo` | BooleanField | Participante activo |
+| UniqueConstraint | (conferencia, usuario, rol) | — |
+
+### `conferences.InvitacionRevisor`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `conferencia` | FK → Conferencia | — |
+| `email` | EmailField | Correo del invitado |
+| `usuario` | FK → User (nullable) | Usuario si existe |
+| `token` | CharField | Token único |
+| `estado` | CharField | pendiente, aceptada, rechazada, expirada |
+| `expira_en` | DateTimeField | 30 días desde creación |
+| `creado_en` | DateTimeField | Fecha de creación |
+
+### `submissions.Ponencia`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `conferencia` | FK → Conferencia | — |
+| `autor_principal` | FK → User | Autor que postula |
+| `titulo` | CharField | Título del trabajo |
+| `resumen` | TextField | Resumen / abstract |
+| `area_tematica` | CharField | Área temática seleccionada |
+| `autores` | JSONField | Lista de coautores [{nombre, email, institucion}] |
+| `archivo` | FileField | Archivo subido (PDF/doc) |
+| `archivo_revisado` | FileField | Archivo con correcciones |
+| `estado` | CharField | postulada, en_revision, aceptada, rechazada, aceptada_con_cambios, cambios_enviados |
+| `comentario_estado` | TextField | Comentario del cambio de estado |
+| `pago_confirmado` | BooleanField | Pago realizado |
+| `pago_referencia` | CharField | Referencia de pago |
+| UniqueConstraint | (autor_principal, conferencia) | — |
+
+### `submissions.RespuestaFormulario`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ponencia` | FK → Ponencia | — |
+| `nombre_campo` | CharField | Nombre del campo dinámico |
+| `valor` | TextField | Valor del campo |
+| UniqueConstraint | (ponencia, nombre_campo) | — |
+
+### `reviews.AsignacionRevisor`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ponencia` | FK → Ponencia | — |
+| `revisor` | FK → User | Revisor asignado |
+| `es_desempate` | BooleanField | Es revisor de desempate |
+| `creado_en` | DateTimeField | Fecha de asignación |
+| UniqueConstraint | (ponencia, revisor) | — |
+
+### `reviews.Revision`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `asignacion` | OneToOne → AsignacionRevisor | — |
+| `respuestas_rubrica` | JSONField | Respuestas a la rúbrica |
+| `comentario_privado` | TextField | Comentario para el organizador |
+| `comentario_autor` | TextField | Comentario para el autor |
+| `veredicto` | CharField | aceptado, rechazado, aceptado_con_cambios |
+| `estado` | CharField | pendiente, en_progreso, completada |
+| `creado_en` / `completada_en` | DateTimeField | Fechas |
+
+### `reviews.Veredicto`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ponencia` | OneToOne → Ponencia | — |
+| `emitido_por` | FK → User | Organizador que emite |
+| `resultado` | CharField | aceptado, rechazado, aceptado_con_cambios |
+| `resumen_para_autor` | TextField | Feedback consolidado |
+| `plazo_cambios` | DateTimeField | Fecha límite para cambios |
+| `notificado` | BooleanField | Autor notificado |
+| `creado_en` | DateTimeField | — |
+
+### `payments.Pago`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `usuario` | FK → User | Pagador |
+| `stripe_payment_intent_id` | CharField | ID del PaymentIntent (único) |
+| `stripe_charge_id` | CharField | ID del cargo |
+| `stripe_refund_id` | CharField | ID del reembolso |
+| `monto` | DecimalField | Monto |
+| `moneda` | CharField | Código ISO (usd) |
+| `estado` | CharField | pendiente, completado, reembolsado, fallido |
+| `referencia_tipo` | CharField | Tipo de objeto referenciado |
+| `referencia_id` | IntegerField | ID del objeto referenciado |
+| `creado_en` | DateTimeField | — |
+
+### `notifications.Notificacion`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `usuario` | FK → User | Destinatario |
+| `tipo` | CharField | Tipo de notificación |
+| `titulo` | CharField | Título corto |
+| `mensaje` | TextField | Cuerpo del mensaje |
+| `link` | CharField | Enlace de acción |
+| `leida` | BooleanField | Estado de lectura |
+| `creado_en` | DateTimeField | — |
+
+### `notifications.EmailLog`
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `destinatario` | EmailField | Correo destino |
+| `tipo` | CharField | Tipo de email |
+| `asunto` | CharField | Asunto |
+| `cuerpo` | TextField | Contenido del email |
+| `estado` | CharField | enviado, error |
+| `error_msg` | TextField | Mensaje de error si falló |
+| `objeto_tipo` | CharField | Tipo de objeto relacionado |
+| `objeto_id` | IntegerField | ID del objeto relacionado |
+| `enviado_en` | DateTimeField | Fecha de envío |

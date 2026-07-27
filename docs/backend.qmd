@@ -1,0 +1,195 @@
+# Backend — Django API
+
+## Configuración
+
+La configuración central reside en `backend/config/settings.py`. Algunos aspectos clave:
+
+- **Apps**: 6 apps locales (`core`, `accounts`, `conferences`, `submissions`, `reviews`, `payments`, `notifications`) + Django REST Framework, CORS, SimpleJWT, django-filter
+- **Base de datos**: MariaDB con cadena de fallback para variables de entorno (cubre Railway, MySQL, MariaDB naming conventions)
+- **Autenticación**: JWT con 2h access, 7d refresh, rotación y blacklist
+- **CORS**: orígenes permitidos desde variable de entorno
+- **Email**: soporta SMTP (Gmail) y console backend para desarrollo
+- **Stripe**: claves pública y secreta desde entorno
+
+## Apps
+
+### `core` — Base Abstracta
+
+Define `Evento` (abstracto), del cual hereda `Conferencia`. Contiene campos comunes: `nombre`, `descripcion`, `fecha_inicio`, `fecha_fin`, `es_publico`, timestamps.
+
+### `accounts` — Autenticación y Usuarios
+
+**Modelo**: `User` (AbstractBaseUser) con campos:
+- `email` (PK lógica), `nombres`, `apellidos`, `institucion`, `biografia`, `foto_perfil`
+- `rol`: ADMINISTRADOR, ORGANIZADOR, REVISOR, AUTOR, SUPERVISOR
+- `is_active`, `is_staff`, `fecha_registro`, `ultima_sesion`
+- `VerificacionEmail`: OneToOne con token y código de 6 dígitos
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `registro/` | POST | Registro con verificación por email |
+| `login/` | POST | Login JWT (verifica email si rol lo requiere) |
+| `logout/` | POST | Blacklist del refresh token |
+| `verificar/` | GET | Verificar email por token |
+| `verificar/codigo/` | POST | Verificar email por código de 6 dígitos |
+| `verificar/reenviar/` | POST | Reenviar email de verificación |
+| `perfil/me/` | GET/PUT | Perfil del usuario autenticado |
+| `perfil/password/` | POST | Cambiar contraseña |
+| `admin/stats/` | GET | Estadísticas globales (solo admin) |
+| `admin/usuarios/` | GET | Listar/buscar usuarios (solo admin) |
+| `admin/usuarios/<id>/rol/` | PATCH | Cambiar rol de usuario |
+| `admin/usuarios/<id>/estado/` | PATCH | Activar/desactivar usuario |
+
+### `conferences` — Conferencias
+
+**Modelos**:
+- `Conferencia` (hereda `Evento`): organizador, visibilidad (pública/privada), estado (borrador/abierta/en_revisión/cerrada/archivada), slug, áreas temáticas, fechas de postulación, formulario dinámico, rúbrica, soporte para plantillas
+- `ConferenciaUsuario`: M2M User-Conference con rol por conferencia
+- `InvitacionRevisor`: email, token, estado (pendiente/aceptada/rechazada/expirada), expira_en 30 días
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `conferencias/` | GET/POST | Listar (público) / Crear conferencia |
+| `conferencias/<slug>/` | GET/PUT/DELETE | Detalle, editar, eliminar |
+| `conferencias/<slug>/desde-plantilla/` | POST | Clonar desde plantilla |
+| `conferencias/<slug>/participantes/` | GET | Listar participantes |
+| `conferencias/<slug>/revisores/` | GET | Listar revisores disponibles |
+| `conferencias/<slug>/invitar-revisor/` | POST | Invitar participante por email |
+| `conferencias/<slug>/inscribir/` | POST | Inscribirse (con opción de pago Stripe) |
+| `conferencias/invitaciones/<token>/aceptar/` | POST | Aceptar invitación |
+
+### `submissions` — Ponencias
+
+**Modelos**:
+- `Ponencia`: autor_principal, título, resumen, área temática, autores (JSON), archivo, estado (postulada/en_revisión/aceptada/rechazada/aceptada_con_cambios/cambios_enviados)
+- `RespuestaFormulario`: respuestas a campos dinámicos de la conferencia
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `conferencias/ponencias/` | GET/POST | Listar / Postular ponencia |
+| `conferencias/ponencias/<id>/` | GET/PUT | Detalle / Editar |
+| `conferencias/ponencias/<id>/cambiar-estado/` | POST | Cambiar estado |
+| `conferencias/ponencias/<id>/confirmar-pago/` | POST | Confirmar pago |
+| `conferencias/ponencias/<id>/enviar-cambios/` | POST | Enviar cambios solicitados |
+| `conferencias/ponencias/<id>/descargar/` | GET | Descargar archivo |
+| `api/mis-postulaciones/` | GET | Postulaciones del usuario autenticado |
+
+### `reviews` — Revisión por Pares
+
+**Modelos**:
+- `AsignacionRevisor`: ponencia + revisor + es_desempate
+- `Revision`: respuestas_rúbrica (JSON), comentarios, veredicto, estado (pendiente/en_progreso/completada)
+- `Veredicto`: resultado consolidado, resumen para autor, plazo cambios
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `reviews/asignar/` | POST | Asignar revisor manualmente |
+| `reviews/asignar-automatico/<id>/` | POST | Asignación automática |
+| `reviews/mis-asignaciones/` | GET | Asignaciones del revisor autenticado |
+| `reviews/<int:revision_id>/` | GET | Detalle de revisión |
+| `reviews/<int:revision_id>/completar/` | POST | Completar revisión |
+| `reviews/ponencia/<int:ponencia_id>/` | GET | Revisiones de una ponencia |
+| `reviews/veredicto/<int:ponencia_id>/` | GET/POST | Ver/emitir veredicto |
+
+### `payments` — Pagos con Stripe
+
+**Modelo**: `Pago` con usuario, stripe_payment_intent_id, monto, moneda, estado (pendiente/completado/reembolsado/fallido), referencia polimórfica a Ponencia o Inscripción.
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `payments/crear/` | POST | Crear PaymentIntent |
+| `payments/webhook/` | POST | Webhook de Stripe |
+| `payments/confirmar/` | POST | Confirmación manual |
+| `payments/pagos/` | GET | Listar pagos del usuario |
+| `payments/pagos/<id>/` | GET | Detalle de pago |
+| `payments/pagos/<id>/recibo/` | GET | Descargar recibo |
+| `payments/pagos/<id>/reembolsar/` | POST | Reembolsar pago |
+
+### `notifications` — Notificaciones
+
+**Modelos**:
+- `Notificacion`: notificaciones in-app (campana) con tipo, título, mensaje, link, leída
+- `EmailLog`: auditoría persistente de emails enviados
+
+**Endpoints**:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `notifications/` | GET | Listar últimas 50 notificaciones |
+| `notifications/<pk>/leer/` | POST | Marcar como leída |
+| `notifications/leer-todas/` | POST | Marcar todas como leídas |
+| `notifications/test/bienvenida/` | POST | Test: email de bienvenida |
+| `notifications/test/asignacion-revisor/` | POST | Test: asignación de revisor |
+| `notifications/test/veredicto/` | POST | Test: veredicto emitido |
+| `notifications/test/cambio-fecha/` | POST | Test: cambio de fecha |
+| `notifications/test/paper-reenviado/` | POST | Test: paper reenviado |
+
+**Tipos de notificación por email**:
+- Bienvenida, Asignación de Revisor, Veredicto, Feedback, Cambio de Fecha, Paper Reenviado, Invitación a Conferencia
+
+## Modelo de Datos Completo
+
+~~~
+accounts.User
+  email (PK), nombres, apellidos, institucion, biografia, foto_perfil
+  rol: ADMINISTRADOR | ORGANIZADOR | REVISOR | AUTOR | SUPERVISOR
+  is_active, is_staff, fecha_registro, ultima_sesion
+  + VerificacionEmail (OneToOne): token, codigo
+
+core.Evento (abstract)
+  nombre, descripcion, fecha_inicio, fecha_fin, es_publico
+  creado_en, actualizado_en
+
+conferences.Conferencia (hereda Evento)
+  organizador → User, slug, visibilidad, estado
+  areas_tematicas (JSON), formulario_postulacion (JSON), rubrica (JSON)
+  fechas de postulación, es_de_pago, monto_inscripcion
+  es_plantilla, plantilla_origen → Conferencia
+
+conferences.ConferenciaUsuario
+  conferencia → Conferencia, usuario → User
+  rol: ORGANIZADOR | REVISOR | AUTOR | SUPERVISOR
+  UNIQUE(conferencia, usuario, rol)
+
+conferences.InvitacionRevisor
+  conferencia → Conferencia, email, usuario → User (nullable)
+  token (único), estado, expira_en
+
+submissions.Ponencia
+  conferencia → Conferencia, autor_principal → User
+  titulo, resumen, area_tematica, autores (JSON)
+  archivo, archivo_revisado, estado
+  UNIQUE(autor_principal, conferencia)
+
+submissions.RespuestaFormulario
+  ponencia → Ponencia, nombre_campo, valor
+  UNIQUE(ponencia, nombre_campo)
+
+reviews.AsignacionRevisor
+  ponencia → Ponencia, revisor → User, es_desempate
+  UNIQUE(ponencia, revisor)
+
+reviews.Revision
+  asignacion → AsignacionRevisor (OneToOne)
+  respuestas_rubrica (JSON), comentarios, veredicto, estado
+
+reviews.Veredicto
+  ponencia → Ponencia (OneToOne), emitido_por → User
+  resultado, resumen_para_autor, plazo_cambios
+
+payments.Pago
+  usuario → User, stripe_payment_intent_id (único)
+  monto, moneda, estado
+  referencia_tipo, referencia_id (polymorphic)
+
+notifications.Notificacion
+  usuario → User, tipo, titulo, mensaje, link, leida
+
+notifications.EmailLog
+  destinatario, tipo, asunto, estado, error_msg
+  objeto_tipo, objeto_id (polymorphic)
+~~~

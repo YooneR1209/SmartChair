@@ -1,0 +1,13 @@
+/*-- scss:defaults --*/
+$primary: #0d6efd;
+$body-bg: #ffffff;
+$code-color: #e83e8c;
+
+/*-- scss:rules --*/
+h1, h2, h3 {
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.3rem;
+}
+.sidebar nav li {
+  font-size: 0.9rem;
+}

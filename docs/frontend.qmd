@@ -1,0 +1,96 @@
+# Frontend — React SPA
+
+## Configuración
+
+- **Framework**: React 19.2.5 con Vite 8.x
+- **Estilos**: Tailwind CSS 4.2.4
+- **Routing**: React Router 7.14.2 (BrowserRouter)
+- **HTTP**: Axios
+- **Pagos**: Stripe Elements
+- **Iconos**: Lucide React
+
+Proxy de desarrollo en `vite.config.js`: `/api` y `/media` redirigen a `localhost:8000`.
+
+## Estructura del Código
+
+```
+src/
+├── main.jsx                         # Entry point ReactDOM
+├── App.jsx                          # BrowserRouter con todas las rutas
+├── index.css / responsive.css       # Estilos base + responsivos
+├── styles/
+│   └── globals.css                  # Design tokens (CSS custom properties)
+├── shared/
+│   ├── components/
+│   │   ├── AssignReviewersModal.jsx # Modal de asignación de revisores
+│   │   └── ToastContext.jsx         # Contexto de notificaciones toast
+│   ├── layout/
+│   │   ├── Header.jsx               # Header con campana de notificaciones + avatar
+│   │   ├── Layout.jsx               # Layout principal (sidebar + header + contenido)
+│   │   └── Sidebar.jsx              # Sidebar con 4 configuraciones según rol
+│   ├── services/
+│   │   ├── api.js                   # Cliente API centralizado (todos los endpoints)
+│   │   └── events.js                # Event bus (pub/sub)
+│   └── utils/
+│       └── statusMap.jsx            # Mapas de estado + Stepper component
+└── modules/
+    ├── landing/                     # Landing page pública
+    ├── auth/                        # Login, registro, verificación
+    ├── dashboard/                   # Dashboard por rol
+    ├── conferences/                 # Listado y detalle de conferencias
+    ├── submissions/                 # Mis ponencias, postular, gestionar
+    ├── reviews/                     # Mis revisiones
+    ├── payments/                    # Historial de pagos
+    ├── certificates/                # Descarga de certificados
+    ├── profile/                     # Editar perfil, cambiar contraseña
+    └── admin/                       # Panel de administración
+```
+
+## Módulos y Rutas
+
+| Ruta | Página | Descripción |
+|------|--------|-------------|
+| `/` | `Landing` | Página pública con hero, features, proceso, roles |
+| `/login` | `Login` | Login JWT con manejo de verificación pendiente |
+| `/registro` | `Register` | Registro con verificación por código |
+| `/verificar` | `VerificarCuenta` | Verificar email (token o código) |
+| `/dashboard` | `Dashboard` | Dashboard según rol (estadísticas de autor, revisor, organizador, admin) |
+| `/mis-ponencias` | `MisPonencias` | Postulaciones del autor con filtros, stepper, feedback, reenvío |
+| `/conferencias` | `Conferencias` | Listado con modales de crear, clonar, eliminar |
+| `/conferencias/:slug` | `DetalleConferencia` | Detalle con búsqueda de usuarios, participantes, inscripción + Stripe |
+| `/invitacion/:token` | `AceptarInvitacion` | Aceptar/rechazar invitación |
+| `/mis-revisiones` | `MisRevisiones` | Evaluaciones asignadas con formulario de rúbrica |
+| `/pagos` | `Pagos` | Historial de pagos, recibos, reembolsos |
+| `/certificados` | `Certificados` | Descargar certificados de ponencias aceptadas |
+| `/perfil` | `Perfil` | Editar datos y cambiar contraseña |
+| `/admin` | `AdminPanel` | Panel admin (usuarios, conferencias, postulaciones, pagos) |
+| `/gestionar-postulaciones` | `GestionarPostulaciones` | Gestión de postulaciones (organizador) |
+
+## Sidebar por Rol
+
+El `Sidebar.jsx` tiene 4 configuraciones:
+
+- **ADMINISTRADOR**: Dashboard, Conferencias, Usuarios, Pagos, Perfil
+- **ORGANIZADOR**: Dashboard, Conferencias, Postulaciones, Perfil
+- **AUTOR**: Dashboard, Mis Ponencias, Conferencias, Certificados, Perfil
+- **REVISOR**: Dashboard, Mis Revisiones, Perfil
+
+## Servicios API
+
+El cliente centralizado en `api.js` expone objetos con métodos para cada módulo:
+
+- **`auth`**: `login`, `registro`, `verificarEmail`, `verificarCodigo`, `reenviarVerificacion`, `logout`, `perfil`, `actualizarPerfil`, `cambiarPassword`, `buscarUsuarios`
+- **`conferencias`**: `listar`, `detalle`, `crear`, `editar`, `eliminar`, `clonar`, `invitarRevisor`, `listarRevisores`, `aceptarInvitacion`, `listarPonencias`, `postular`, `inscribir`, `enviarCambios`, `eliminarPonencia`, `listarParticipantes`
+- **`postulaciones`**: `misPostulaciones`, `detalle`
+- **`reviews`**: `misAsignaciones`, `completar`, `verVeredicto`, `emitirVeredicto`, `asignarRevisor`, `asignarAutomatico`, `detalle`, `revisionesPorPonencia`
+- **`payments`**: `listar`, `detalle`, `crear`, `confirmar`, `reembolsar`, `recibo`
+- **`certificados`**: `listar`, `descargar`
+- **`admin`**: `stats`, `usuarios`, `cambiarRol`, `toggleEstado`, `postulaciones`, `pagos`
+- **`notifications`**: `listar`, `marcarLeida`, `marcarTodasLeidas`
+
+## Arquitectura Frontend
+
+- **Sin librería de estado global**: usa React Context para toasts y `localStorage` para tokens/perfil
+- **Event bus** (`events.js`): comunicación entre componentes (ej: refrescar datos tras submit/review)
+- **Todas las llamadas API** se centralizan en `services/api.js` — los componentes nunca llaman Axios directamente
+- **`ProtectedRoute`**: componente wrapper que verifica autenticación y opcionalmente el rol

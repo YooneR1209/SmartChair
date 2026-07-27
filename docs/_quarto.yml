@@ -1,0 +1,40 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "SmartChair"
+  subtitle: "Sistema de Gestión de Conferencias Académicas"
+  author: "SmartChair Team"
+  date: today
+  language: es
+  chapters:
+    - index.qmd
+    - backend.qmd
+    - frontend.qmd
+    - database.qmd
+    - api.qmd
+    - deployment.qmd
+  page-footer:
+    center: "SmartChair — Documentación del Proyecto"
+
+format:
+  html:
+    theme:
+      - cosmo
+      - custom.scss
+    code-copy: true
+    code-fold: false
+    toc: true
+    toc-depth: 4
+    number-sections: true
+  pdf:
+    documentclass: report
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    colorlinks: true
+  docx:
+    toc: true
+    toc-depth: 4
+    number-sections: true
